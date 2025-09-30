@@ -13,7 +13,7 @@ This project implements and compares four mainstream generative models on MNIST 
 
 ### Google Colab Execution
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/MNIST_COMP/blob/main/generative_models_comparison.py)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Comparison.ipynb)
 
 ### Local Execution
 
