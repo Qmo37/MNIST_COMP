@@ -13,7 +13,7 @@ This project implements and compares four mainstream generative models on MNIST 
 
 ### Google Colab Execution
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Comparison.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb)
 
 ### Local Execution
 
@@ -21,7 +21,7 @@ This project implements and compares four mainstream generative models on MNIST 
 git clone https://github.com/Qmo37/MNIST_COMP.git
 cd MNIST_COMP
 pip install torch torchvision matplotlib numpy tqdm scipy seaborn
-python generative_models_comparison.py
+# Open MNIST_Generative_Models_Complete.ipynb in Jupyter
 ```
 
 ## 📊 Advanced Visualization and Comparison Methods
@@ -58,8 +58,8 @@ Our project provides comprehensive evaluation across four key dimensions:
 
 #### 1. **Radar Chart** (Best for Overall Comparison)
 ```python
-# Comprehensive performance visualization
-final_evaluation_visualization.py
+# All visualizations included in the complete notebook
+# MNIST_Generative_Models_Complete.ipynb
 ```
 - **Strengths**: Shows all metrics simultaneously
 - **Best for**: Quick model comparison and identifying trade-offs
@@ -130,11 +130,10 @@ seaborn>=0.11.0
 
 ```
 MNIST_COMP/
-├── generative_models_comparison.py     # Main comparison script
-├── final_evaluation_visualization.py   # Advanced visualization toolkit
-├── README.md                          # Project documentation
-├── assignment_requirements.txt        # Assignment requirements
-├── outputs/                          # Output directory
+├── MNIST_Generative_Models_Complete.ipynb  # Complete integrated notebook
+├── README.md                               # Project documentation
+├── assignment_requirements.txt             # Assignment requirements
+├── outputs/                                # Output directory
 │   ├── images/                       # Generated images
 │   │   ├── vae/
 │   │   ├── gan/
