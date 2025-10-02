@@ -1,121 +1,162 @@
 # MNIST Generative Models Comparison Project
 
-## Project Overview
+## 📋 Project Overview
 
-This project implements and compares four mainstream generative models on MNIST handwritten digit generation tasks:
+This project implements and compares four mainstream generative models on MNIST handwritten digit generation:
 
-1. **Variational Autoencoder (VAE)**
-2. **Generative Adversarial Network (GAN)**
-3. **Conditional Generative Adversarial Network (cGAN)**
-4. **Denoising Diffusion Probabilistic Model (DDPM)**
+1. **VAE** (Variational Autoencoder)
+2. **GAN** (Generative Adversarial Network)
+3. **cGAN** (Conditional GAN)
+4. **DDPM** (Denoising Diffusion Probabilistic Model)
 
 ## 🚀 Quick Start
 
-### Google Colab Execution
-
+### Option 1: Google Colab (Recommended)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb)
 
-### Local Execution
-
+### Option 2: Local Jupyter Notebook
 ```bash
 git clone https://github.com/Qmo37/MNIST_COMP.git
 cd MNIST_COMP
-pip install torch torchvision matplotlib numpy tqdm scipy seaborn
-# Open MNIST_Generative_Models_Complete.ipynb in Jupyter
+pip install -r requirements.txt
+jupyter notebook MNIST_Generative_Models_Complete.ipynb
 ```
 
-## 📊 Advanced Visualization and Comparison Methods
-
-### 🎯 Four-Dimensional Evaluation Framework
-
-Our project provides comprehensive evaluation across four key dimensions:
-
-#### 1. **Image Quality (清晰度)**
-- **FID Score**: Lower is better (measures similarity to real images)
-- **Inception Score (IS)**: Higher is better (quality and diversity)
-- **LPIPS Distance**: Perceptual similarity metrics
-- **SSIM**: Structural similarity index
-
-#### 2. **Training Stability (穩定性)**
-- **Loss Variance**: Standard deviation of training losses
-- **Convergence Rate**: Speed of loss stabilization
-- **Mode Collapse Detection**: For GAN-based models
-- **Training Time Consistency**: Reproducibility across runs
-
-#### 3. **Controllability (可控性)**
-- **Conditional Generation**: Ability to generate specific digits
-- **Latent Space Interpolation**: Smoothness of transitions
-- **Attribute Manipulation**: Control over specific features
-- **Sample Diversity**: Range of generated variations
-
-#### 4. **Efficiency (效率)**
-- **Training Time**: Time to convergence
-- **Inference Speed**: Generation time per sample
-- **Memory Usage**: GPU memory requirements
-- **Parameter Count**: Model complexity
-
-### 📈 Visualization Methods
-
-#### 1. **Radar Chart** (Best for Overall Comparison)
-```python
-# All visualizations included in the complete notebook
-# MNIST_Generative_Models_Complete.ipynb
-```
-- **Strengths**: Shows all metrics simultaneously
-- **Best for**: Quick model comparison and identifying trade-offs
-- **Features**:
-  - Normalized scores (0-1 scale)
-  - Semi-transparent overlays for comparison
-  - Clear legend and performance indicators
-
-#### 2. **3D Spherical Performance Zones** (Innovation)
-- **Concept**: Performance as distance from ideal corner (1,1,1)
-- **Mathematical Foundation**: Spherical zones based on Euclidean distance
-- **Visualization Features**:
-  - Semi-transparent spheres for performance levels (0.9, 0.7, 0.5, 0.3)
-  - Colored volume inside spheres with low transparency (0.12)
-  - Model points clearly positioned in 3D space
-  - Golden star marking ideal performance corner
-
-```python
-# Performance calculation
-distance = sqrt((x-1)² + (y-1)² + (z-1)²)
-performance_score = 1 - (distance / sqrt(3))
+### Option 3: Python Script
+```bash
+python mnist_generative_models.py --epochs 30 --calculate-real-metrics
 ```
 
-#### 3. **Performance Heatmap**
-- **Color Scheme**: Red-Yellow-Green gradient (intuitive bad-to-good mapping)
-- **Features**: Numerical values displayed in cells
-- **Best for**: Precise metric comparison and identifying specific strengths/weaknesses
+## 📁 Project Structure
 
-### 🔍 Detailed Model Analysis
+```
+MNIST_COMP/
+├── 📄 Main Files
+│   ├── MNIST_Generative_Models_Complete.ipynb    # 🎯 Main notebook (START HERE)
+│   ├── mnist_generative_models.py                # Alternative Python script
+│   ├── README.md                                  # This file
+│   ├── assignment_requirements.txt                # Assignment specifications
+│   └── HW2-- 大亂鬥.pdf                           # Assignment document
+│
+├── 📁 src/                                        # Source utilities
+│   ├── visualization_functions.py                 # Reusable visualization code
+│   └── performance_plot.py                        # Performance plotting utilities
+│
+├── 📁 scripts/                                    # Helper scripts
+│   ├── migration/                                 # Notebook migration tools
+│   │   ├── complete_migration.py
+│   │   ├── MIGRATION_SUMMARY.md
+│   │   └── QUICK_REFERENCE.md
+│   └── visualizations/                            # Visualization experiments
+│       ├── interactive_3d_visualization.py
+│       ├── colab_interactive_3d.py
+│       └── performance_zones_3d.py
+│
+├── 📁 outputs/                                    # Generated results
+│   ├── images/                                    # Model outputs
+│   │   ├── vae/
+│   │   ├── gan/
+│   │   ├── cgan/
+│   │   ├── ddpm/
+│   │   └── comparison/
+│   ├── visualizations/                            # Performance charts
+│   │   ├── radar_chart_optimized.png
+│   │   ├── 3d_spherical_zones.png
+│   │   ├── performance_heatmap.png
+│   │   └── 3d_spherical_performance.png
+│   └── checkpoints/                               # Model weights
+│
+├── 📁 data/                                       # Dataset (auto-downloaded)
+│   └── MNIST/
+│
+└── 📁 backups/                                    # Version backups
+    ├── MNIST_Generative_Models_Complete.ipynb.fixed
+    └── MNIST_Generative_Models_Complete.ipynb.original
+```
 
-| Model | Image Quality | Training Stability | Controllability | Efficiency | Overall Score |
-|-------|---------------|-------------------|-----------------|------------|---------------|
+## 🎯 Four-Dimensional Evaluation Framework
+
+### 1. **Image Quality (清晰度)**
+- FID Score (lower is better)
+- Inception Score (higher is better)
+- Visual sharpness and realism
+
+### 2. **Training Stability (穩定性)**
+- Loss variance
+- Convergence rate
+- Mode collapse detection
+
+### 3. **Controllability (可控性)**
+- Conditional generation ability
+- Latent space manipulation
+- Sample diversity
+
+### 4. **Efficiency (效率)**
+- Training time
+- Inference speed
+- Memory usage
+
+## 📊 Model Comparison Results
+
+| Model | Image Quality | Stability | Controllability | Efficiency | Overall |
+|-------|--------------|-----------|-----------------|------------|---------|
 | **VAE** | 0.70 | 0.90 | 0.60 | 0.80 | 0.750 |
 | **GAN** | 0.80 | 0.50 | 0.70 | 0.60 | 0.650 |
 | **cGAN** | 0.85 | 0.60 | 0.90 | 0.70 | 0.762 |
 | **DDPM** | 0.95 | 0.80 | 0.80 | 0.40 | 0.738 |
 
-#### 3D Spherical Scores (Distance-based)
-- **DDPM**: 0.834 (closest to ideal)
-- **cGAN**: 0.747
-- **VAE**: 0.706
-- **GAN**: 0.644 (furthest from ideal)
+### Key Findings
+- 🏆 **Best Quality**: DDPM (0.95)
+- 🏆 **Best Control**: cGAN (0.90)
+- 🏆 **Best Stability**: VAE (0.90)
+- 🏆 **Best Efficiency**: VAE (0.80)
+- 🏆 **Best Overall**: cGAN (0.762)
 
-### 📋 System Requirements
+## 📈 Visualization Methods
 
-#### Recommended Configuration
-- **GPU**: NVIDIA T4 or better (Google Colab free tier)
-- **Memory**: At least 8GB RAM
-- **Storage**: 2GB available space
+### 1. Radar Chart
+Perfect for quick overall comparison across all metrics.
 
-#### Software Requirements
-- Python 3.7+
-- PyTorch 1.9+
-- CUDA 11.0+ (if using GPU)
+### 2. 3D Spherical Performance Zones
+Innovative visualization showing performance as distance from ideal point (1,1,1).
+- Smaller sphere = Better performance
+- Color-coded zones for different performance levels
 
-#### Dependencies
+### 3. Performance Heatmap
+Detailed numerical comparison with color gradients.
+
+### 4. Training Curves
+Loss progression over epochs for each model.
+
+## 🔧 Training Parameters
+
+Assignment-compliant configuration:
+
+```python
+BATCH_SIZE = 128        # Assignment requirement
+LATENT_DIM = 100        # GAN latent dimension
+SEED = 42               # Fixed seed for reproducibility
+EPOCHS = 30             # Adjustable (5 for quick test)
+
+# Learning rates (Assignment requirements)
+LR_VAE = 1e-3           # VAE learning rate
+LR_GAN = 2e-4           # GAN/cGAN learning rate
+LR_DDPM = 1e-3          # DDPM learning rate
+```
+
+## ⚡ Performance Estimates (Google Colab T4)
+
+| Model | Training Time | Generation Time | Memory |
+|-------|--------------|-----------------|--------|
+| VAE | ~5 min | <1 sec | 2 GB |
+| GAN | ~8 min | <1 sec | 2.5 GB |
+| cGAN | ~10 min | <1 sec | 3 GB |
+| DDPM | ~15 min | ~2 min | 4 GB |
+
+**Total Runtime**: ~40-45 minutes
+
+## 📦 Requirements
+
 ```
 torch>=1.9.0
 torchvision>=0.10.0
@@ -124,203 +165,87 @@ numpy>=1.19.0
 tqdm>=4.60.0
 scipy>=1.7.0
 seaborn>=0.11.0
+pandas>=1.3.0
+plotly>=5.0.0  # Optional for interactive 3D
 ```
 
-## 🏗️ Project Structure
+## 🎨 Generated Outputs
 
-```
-MNIST_COMP/
-├── MNIST_Generative_Models_Complete.ipynb  # Complete integrated notebook
-├── README.md                               # Project documentation
-├── assignment_requirements.txt             # Assignment requirements
-├── outputs/                                # Output directory
-│   ├── images/                       # Generated images
-│   │   ├── vae/
-│   │   ├── gan/
-│   │   ├── cgan/
-│   │   ├── ddpm/
-│   │   └── comparison/
-│   ├── checkpoints/                  # Model weights
-│   ├── metrics/                      # Evaluation metrics
-│   └── visualizations/               # Performance charts
-│       ├── radar_chart_optimized.png
-│       ├── 3d_spherical_zones.png
-│       └── performance_heatmap.png
-```
+### Image Outputs
+- **VAE**: 10 random images (smooth, slightly blurred)
+- **GAN**: 10 random images (sharp, potential mode collapse)
+- **cGAN**: 10×10 grid (digits 0-9, 10 each, controllable)
+- **DDPM**: 10 random images (highest quality, slow generation)
+- **Comparison**: Side-by-side comparison figure
 
-## 🎯 Enhanced Features
+### Visualization Outputs
+- Radar chart comparison
+- 3D spherical performance zones
+- Performance heatmap
+- Training loss curves
+- Metrics summary table
 
-### 🔥 Latest Improvements
-
-1. **Progress Bars**: Detailed progress tracking for all training processes
-2. **Early Stopping**: Prevents overfitting and improves training efficiency
-3. **GPU Memory Optimization**: Optimized for T4 GPU performance
-4. **Automatic Image Saving**: All generated images saved with timestamps
-5. **Advanced Evaluation Metrics**:
-   - Comprehensive four-dimensional analysis
-   - Spherical performance zone visualization
-   - Multi-perspective comparison charts
-6. **Interactive Visualizations**: Clear, intuitive performance representations
-
-### 📊 Evaluation Metrics Details
-
-| Metric | Description | Purpose | Range |
-|--------|-------------|---------|-------|
-| **FID Score** | Fréchet Inception Distance | Similarity to real images | 0-∞ (lower better) |
-| **IS Score** | Inception Score | Quality and diversity | 1-∞ (higher better) |
-| **Generation Time** | Inference speed | Model practicality | Seconds |
-| **Training Stability** | Loss variance | Convergence reliability | 0-1 (higher better) |
-| **3D Spherical Score** | Distance from ideal | Overall performance | 0-1 (higher better) |
-
-## 🎨 Comparison Methodologies
-
-### 1. **Quantitative Analysis**
-- **Statistical Metrics**: FID, IS, LPIPS, SSIM scores
-- **Performance Benchmarking**: Standardized test procedures
-- **Reproducibility**: Fixed seeds and controlled environments
-
-### 2. **Qualitative Assessment**
-- **Visual Quality**: Human-perceptible image sharpness and realism
-- **Diversity**: Range and variety of generated samples
-- **Mode Coverage**: Ability to generate all digit classes
-
-### 3. **Efficiency Evaluation**
-- **Computational Cost**: Training and inference time measurements
-- **Resource Utilization**: Memory and GPU usage profiling
-- **Scalability**: Performance under different batch sizes
-
-### 4. **Spherical Performance Zones**
-Our innovative 3D visualization approach represents performance as spherical zones:
-
-- **Mathematical Foundation**: Distance from ideal corner (1,1,1)
-- **Performance Levels**:
-  - Green zone (≥0.9): Excellent performance
-  - Yellow zone (≥0.7): Good performance
-  - Orange zone (≥0.5): Average performance
-  - Red zone (≥0.3): Poor performance
-- **Visual Features**:
-  - Semi-transparent sphere surfaces
-  - Colored volume interiors
-  - Model positioning in 3D space
-
-## 🔧 Training Parameters
-
-Standard configuration meeting assignment requirements:
-
-```python
-# Fixed parameters
-BATCH_SIZE = 128
-SEED = 42
-EPOCHS = 30  # Adjustable to 50+
-
-# Learning rates
-LR_VAE = 1e-3
-LR_GAN = 2e-4
-LR_DDPM = 1e-3
-
-# Early stopping parameters
-PATIENCE = 5
-MIN_DELTA = 1e-4
-```
-
-## 📈 Detailed Model Comparison
-
-### Performance Matrix
-
-| Model | Clarity | Controllability | Training Efficiency | Inference Efficiency | Stability |
-|-------|---------|------------------|---------------------|---------------------|-----------|
-| **VAE** | Low (Blurry) | Indirect | 🟢 High | 🟢 Excellent | 🟢 Excellent |
-| **GAN** | High (Sharp) | None | 🟡 Medium | 🟢 Excellent | 🔴 Low |
-| **cGAN** | High (Sharp) | 🟢 High | 🟡 Medium | 🟢 Excellent | 🔴 Low |
-| **DDPM** | 🟢 Excellent | Achievable | 🔴 Very Low | 🔴 Very Low | 🟢 Excellent |
-
-### Trade-off Analysis
-
-1. **Quality vs Speed**: DDPM offers highest quality but slowest generation
-2. **Control vs Stability**: cGAN provides control but with training instability
-3. **Efficiency vs Performance**: VAE is fastest but with lower image quality
-4. **Versatility**: Each model excels in different scenarios
-
-## 🎨 Generated Results
-
-### Output Examples
-- **VAE**: 10 random generated images (smooth, slightly blurred)
-- **GAN**: 10 random generated images (sharp, potential mode collapse)
-- **cGAN**: Digits 0-9, 10 each (100 total, 10×10 grid, controllable)
-- **DDPM**: 10 random generated images (highest quality, slow generation)
-- **Comparison Chart**: Side-by-side model results with performance metrics
-
-All images automatically saved to `outputs/images/` with timestamps and performance data.
-
-## 🚀 Execution Time Estimates
-
-Expected execution times on Google Colab T4 GPU:
-
-| Model | Training Time | Generation Time | Memory Usage |
-|-------|---------------|-----------------|--------------|
-| VAE | ~5 minutes | <1 second | 2GB |
-| GAN | ~8 minutes | <1 second | 2.5GB |
-| cGAN | ~10 minutes | <1 second | 3GB |
-| DDPM | ~15 minutes | ~2 minutes | 4GB |
-
-**Total Execution Time**: Approximately 40-45 minutes
-
-## 🔬 Advanced Analysis Features
-
-### 1. **Multi-Perspective Evaluation**
-- Radar charts for comprehensive comparison
-- 3D spherical zones for intuitive performance understanding
-- Heatmaps for detailed metric analysis
-
-### 2. **Performance Insights**
-- Best overall performer: **cGAN** (highest average score: 0.762)
-- Best in 3D space: **DDPM** (closest to ideal: 0.834)
-- Most efficient: **VAE** (best training stability and speed)
-- Most controllable: **cGAN** (highest controllability score: 0.90)
-
-### 3. **Visualization Guide**
-- **Use Radar Chart**: For quick overall model comparison
-- **Use 3D Spherical Zones**: For understanding performance relationships
-- **Use Heatmap**: For detailed numerical metric analysis
+All outputs saved to `outputs/` directory.
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### GPU Memory Issues
+```python
+# Memory cleanup is built-in
+clear_gpu_memory()
+```
 
-1. **GPU Memory Insufficient**
-   ```python
-   # Memory cleanup included in code
-   clear_gpu_memory()
-   ```
+### Training Too Slow
+```python
+# Reduce epochs for quick testing
+EPOCHS = 5
+CALCULATE_REAL_METRICS = False
+```
 
-2. **Training Too Slow**
-   ```python
-   # Reduce epochs if needed
-   EPOCHS = 20
-   ```
+### Colab Disconnection
+- Checkpoints auto-saved every 10 epochs
+- Resume from checkpoint if needed
 
-3. **Colab Disconnection**
-   - Models automatically save to checkpoints
-   - Can resume training from breakpoints
+### Visualization Issues
+```python
+# For headless environments
+import matplotlib
+matplotlib.use('Agg')
+```
 
-4. **Visualization Issues**
-   ```python
-   # Use non-interactive backend for Colab
-   import matplotlib
-   matplotlib.use('Agg')
-   ```
+## ✅ Assignment Compliance Checklist
 
-**Note**: Please ensure all dependencies are installed and sufficient GPU memory is available before use. Recommended to run in Google Colab for optimal experience.
+- [x] Four models implemented (VAE, GAN, cGAN, DDPM)
+- [x] MNIST dataset (28×28 grayscale)
+- [x] Batch size: 128
+- [x] Fixed seed: 42
+- [x] Correct learning rates (1e-3 VAE, 2e-4 GAN/cGAN)
+- [x] Label smoothing for cGAN (0.9)
+- [x] BCE + KLD loss (VAE)
+- [x] BCE adversarial loss (GAN/cGAN)
+- [x] MSE denoising loss (DDPM)
+- [x] All required outputs generated
+- [x] Four-dimensional analysis
+- [x] Comprehensive visualizations
+- [x] Colab compatible
 
-## 🎯 Assignment Requirements Checklist
+## 📚 Documentation
 
-✅ **Fully complies with all assignment requirements**:
-- [x] Complete implementation of four models
-- [x] MNIST dataset (28×28, grayscale)
-- [x] Specified training parameters and loss functions
-- [x] Fixed random seed (42)
-- [x] All output requirements
-- [x] Detailed four-dimensional analysis with advanced visualizations
-- [x] Colab environment compatibility
-- [x] Comprehensive evaluation framework
-- [x] Multi-perspective comparison methods
+- **MIGRATION_SUMMARY.md**: Details about notebook migration from Python script
+- **QUICK_REFERENCE.md**: Quick reference guide for common tasks
+- **assignment_requirements.txt**: Original assignment specifications
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/Qmo37/MNIST_COMP)
+- [Google Colab Notebook](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb)
+
+## 📄 License
+
+This project is for educational purposes as part of a machine learning course assignment.
+
+---
+
+**Author**: Qmo37  
+**Last Updated**: October 2024  
+**Course**: Machine Learning - Generative Models Assignment

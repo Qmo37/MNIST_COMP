@@ -1130,6 +1130,607 @@ def save_cgan_grid(cgan_images, save_path, show=True):
 
 
 # ============================================================================
+# COMPREHENSIVE VISUALIZATION FUNCTIONS
+# ============================================================================
+
+try:
+    import plotly.graph_objects as go
+
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+
+
+def create_radar_chart(performance_data, save_path, show=True):
+    """Create radar chart comparing all four models across multiple metrics."""
+    categories = list(next(iter(performance_data.values())).keys())
+    N = len(categories)
+
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection="polar"))
+    colors = {"VAE": "#FF6B6B", "GAN": "#4ECDC4", "cGAN": "#45B7D1", "DDPM": "#FFA07A"}
+
+    for model_name, metrics in performance_data.items():
+        values = list(metrics.values())
+        values += values[:1]
+        ax.plot(
+            angles,
+            values,
+            "o-",
+            linewidth=2,
+            label=model_name,
+            color=colors.get(model_name, "#333333"),
+        )
+        ax.fill(angles, values, alpha=0.15, color=colors.get(model_name, "#333333"))
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, size=12)
+    ax.set_ylim(0, 1)
+    plt.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1), fontsize=12)
+    plt.title(
+        "Model Performance Comparison - Radar Chart", size=16, weight="bold", pad=20
+    )
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Radar chart saved to {save_path}")
+
+
+def create_heatmap_comparison(performance_data, save_path, show=True):
+    """Create heatmap showing all metrics for all models."""
+    df = pd.DataFrame(performance_data).T
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(
+        df,
+        annot=True,
+        fmt=".3f",
+        cmap="RdYlGn",
+        cbar_kws={"label": "Performance Score"},
+        linewidths=2,
+        linecolor="white",
+        vmin=0,
+        vmax=1,
+    )
+    plt.title("Model Performance Heatmap", fontsize=16, weight="bold", pad=20)
+    plt.xlabel("Performance Metrics", fontsize=12, weight="bold")
+    plt.ylabel("Models", fontsize=12, weight="bold")
+    plt.xticks(rotation=45, ha="right")
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Heatmap saved to {save_path}")
+
+
+def create_bar_comparison(performance_data, save_path, show=True):
+    """Create grouped bar chart for model comparison."""
+    df = pd.DataFrame(performance_data).T
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    axes = axes.flatten()
+    colors = {"VAE": "#FF6B6B", "GAN": "#4ECDC4", "cGAN": "#45B7D1", "DDPM": "#FFA07A"}
+
+    for idx, metric in enumerate(df.columns):
+        if idx < 4:
+            ax = axes[idx]
+            data = df[metric]
+            bars = ax.bar(
+                data.index,
+                data.values,
+                color=[colors.get(m, "#333333") for m in data.index],
+                edgecolor="black",
+                linewidth=2,
+            )
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height,
+                    f"{height:.3f}",
+                    ha="center",
+                    va="bottom",
+                    fontweight="bold",
+                )
+            ax.set_ylabel("Score", fontsize=12, weight="bold")
+            ax.set_title(metric, fontsize=14, weight="bold")
+            ax.set_ylim(0, 1.1)
+            ax.grid(axis="y", alpha=0.3)
+
+    plt.suptitle("Model Performance - Bar Chart Comparison", fontsize=18, weight="bold")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Bar comparison saved to {save_path}")
+
+
+def create_training_curves(losses_dict, save_path, show=True):
+    """Create training loss curves for all models."""
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    axes = axes.flatten()
+    colors = {"VAE": "#FF6B6B", "GAN": "#4ECDC4", "cGAN": "#45B7D1", "DDPM": "#FFA07A"}
+
+    for idx, (model_name, losses) in enumerate(losses_dict.items()):
+        if idx < 4:
+            ax = axes[idx]
+            epochs = range(1, len(losses) + 1)
+            ax.plot(
+                epochs,
+                losses,
+                color=colors.get(model_name, "#333333"),
+                linewidth=3,
+                marker="o",
+                markersize=8,
+                label=model_name,
+            )
+            ax.set_xlabel("Epoch", fontsize=12, weight="bold")
+            ax.set_ylabel("Loss", fontsize=12, weight="bold")
+            ax.set_title(f"{model_name} Training Loss", fontsize=14, weight="bold")
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=12)
+
+    plt.suptitle("Training Loss Curves", fontsize=18, weight="bold")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Training curves saved to {save_path}")
+
+
+def create_performance_summary_table(
+    performance_data, timing_data, save_path, show=True
+):
+    """Create a comprehensive performance summary table."""
+    summary = []
+    for model in performance_data.keys():
+        row = {"Model": model}
+        row.update(performance_data[model])
+        if model in timing_data:
+            row["Training Time (s)"] = (
+                f"{timing_data[model].get('Training Time', 0):.1f}"
+            )
+            row["Generation Time (s)"] = (
+                f"{timing_data[model].get('Generation Time', 0):.3f}"
+            )
+        summary.append(row)
+    df = pd.DataFrame(summary)
+
+    fig, ax = plt.subplots(figsize=(16, 6))
+    ax.axis("tight")
+    ax.axis("off")
+    table = ax.table(
+        cellText=df.values,
+        colLabels=df.columns,
+        cellLoc="center",
+        loc="center",
+        colColours=["#4ECDC4"] * len(df.columns),
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1, 2.5)
+
+    for i in range(len(df.columns)):
+        table[(0, i)].set_facecolor("#2C3E50")
+        table[(0, i)].set_text_props(weight="bold", color="white")
+
+    colors = {"VAE": "#FFE5E5", "GAN": "#E5F9F7", "cGAN": "#E5F2F9", "DDPM": "#FFF0E5"}
+    for i, model in enumerate(df["Model"], 1):
+        for j in range(len(df.columns)):
+            table[(i, j)].set_facecolor(colors.get(model, "#F0F0F0"))
+
+    plt.title(
+        "Comprehensive Performance Summary Table", fontsize=16, weight="bold", pad=20
+    )
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Performance table saved to {save_path}")
+
+
+def create_static_3d_spherical_zone(performance_data, save_path, show=True):
+    """Create static matplotlib version of 3D spherical zone."""
+    fig = plt.figure(figsize=(14, 10))
+    ax = fig.add_subplot(111, projection="3d")
+    colors = {"VAE": "#FF6B6B", "GAN": "#4ECDC4", "cGAN": "#45B7D1", "DDPM": "#FFA07A"}
+    perfect_point = (1, 1, 1)
+
+    ax.scatter(
+        *perfect_point,
+        c="gold",
+        s=500,
+        alpha=1,
+        edgecolors="black",
+        linewidth=3,
+        marker="*",
+        label="Perfect (1,1,1)",
+        zorder=100,
+    )
+    ax.text(1, 1, 1.08, "IDEAL", fontsize=14, weight="bold", ha="center", color="gold")
+
+    for model_name, metrics in performance_data.items():
+        metrics_list = list(metrics.values())
+        if len(metrics_list) >= 3:
+            x, y, z = metrics_list[0], metrics_list[1], metrics_list[2]
+            distance = np.sqrt((1 - x) ** 2 + (1 - y) ** 2 + (1 - z) ** 2)
+            radius = distance
+            u, v = np.linspace(0, 2 * np.pi, 25), np.linspace(0, np.pi, 20)
+            xs = perfect_point[0] + radius * np.outer(np.cos(u), np.sin(v))
+            ys = perfect_point[1] + radius * np.outer(np.sin(u), np.sin(v))
+            zs = perfect_point[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+            ax.plot_surface(
+                xs,
+                ys,
+                zs,
+                color=colors.get(model_name, "#333333"),
+                alpha=0.25,
+                edgecolor="none",
+            )
+            ax.plot(
+                [x, perfect_point[0]],
+                [y, perfect_point[1]],
+                [z, perfect_point[2]],
+                color=colors.get(model_name, "#333333"),
+                linewidth=3,
+                linestyle="--",
+                alpha=0.7,
+            )
+            ax.scatter(
+                x,
+                y,
+                z,
+                c=colors.get(model_name, "#333333"),
+                s=250,
+                alpha=0.9,
+                edgecolors="black",
+                linewidth=2,
+                label=f"{model_name} (r={radius:.3f})",
+            )
+            ax.text(
+                x,
+                y,
+                z - 0.05,
+                f"{model_name}",
+                fontsize=11,
+                weight="bold",
+                ha="center",
+                color=colors.get(model_name, "#333333"),
+            )
+
+    ax.set_xlabel("📊 Image Quality (Clarity)", fontsize=13, weight="bold", labelpad=12)
+    ax.set_ylabel("📈 Training Stability", fontsize=13, weight="bold", labelpad=12)
+    ax.set_zlabel("⚡ Efficiency", fontsize=13, weight="bold", labelpad=12)
+    ax.set_title(
+        "3D Performance Space - Spherical Zones\nCentered at (1,1,1) • Smaller sphere = Better performance",
+        fontsize=16,
+        weight="bold",
+        pad=20,
+    )
+    ax.set_xlim(0, 1.3)
+    ax.set_ylim(0, 1.3)
+    ax.set_zlim(0, 1.3)
+    ax.legend(
+        loc="upper left", fontsize=10, framealpha=0.95, edgecolor="black", fancybox=True
+    )
+    ax.grid(True, alpha=0.4, linestyle="--")
+    ax.view_init(elev=25, azim=45)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"✓ Static 3D zone plot saved to: {save_path}")
+
+
+def create_interactive_3d_spherical_zone(
+    performance_data, save_path_html, save_path_png, show=True
+):
+    """Create interactive 3D spherical zone visualization for Colab/Jupyter."""
+    if not PLOTLY_AVAILABLE:
+        print("⚠️ Plotly not available. Creating static visualization only.")
+        create_static_3d_spherical_zone(performance_data, save_path_png, show=show)
+        return
+
+    colors_dict = {
+        "VAE": "#FF6B6B",
+        "GAN": "#4ECDC4",
+        "cGAN": "#45B7D1",
+        "DDPM": "#FFA07A",
+    }
+    perfect_point = (1, 1, 1)
+    fig = go.Figure()
+
+    for model_name, metrics in performance_data.items():
+        metrics_list = list(metrics.values())
+        if len(metrics_list) >= 3:
+            x, y, z = metrics_list[0], metrics_list[1], metrics_list[2]
+            distance = np.sqrt((1 - x) ** 2 + (1 - y) ** 2 + (1 - z) ** 2)
+            radius = distance
+            avg_score = (x + y + z) / 3
+            u, v = np.linspace(0, 2 * np.pi, 30), np.linspace(0, np.pi, 20)
+            xs = perfect_point[0] + radius * np.outer(np.cos(u), np.sin(v))
+            ys = perfect_point[1] + radius * np.outer(np.sin(u), np.sin(v))
+            zs = perfect_point[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+            fig.add_trace(
+                go.Surface(
+                    x=xs,
+                    y=ys,
+                    z=zs,
+                    colorscale=[
+                        [0, colors_dict.get(model_name, "#333333")],
+                        [1, colors_dict.get(model_name, "#333333")],
+                    ],
+                    showscale=False,
+                    opacity=0.3,
+                    name=f"{model_name} Zone",
+                    hovertemplate=f"<b>{model_name} Performance Zone</b><br>Radius from ideal: {radius:.3f}<br>Average Score: {avg_score:.3f}<br>Clarity: {x:.3f}<br>Stability: {y:.3f}<br>Efficiency: {z:.3f}<br><extra></extra>",
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[perfect_point[0]],
+                    y=[perfect_point[1]],
+                    z=[perfect_point[2]],
+                    mode="markers+text",
+                    marker=dict(
+                        size=12,
+                        color=colors_dict.get(model_name, "#333333"),
+                        symbol="diamond",
+                        line=dict(color="black", width=2),
+                    ),
+                    text=[model_name],
+                    textposition="top center",
+                    textfont=dict(size=12, color="black", family="Arial Black"),
+                    name=model_name,
+                    hovertemplate=f"<b>{model_name}</b><br>Distance from ideal: {distance:.3f}<br>Performance: {avg_score:.3f}<br><extra></extra>",
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[x, perfect_point[0]],
+                    y=[y, perfect_point[1]],
+                    z=[z, perfect_point[2]],
+                    mode="lines",
+                    line=dict(
+                        color=colors_dict.get(model_name, "#333333"),
+                        width=4,
+                        dash="dash",
+                    ),
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
+
+    fig.add_trace(
+        go.Scatter3d(
+            x=[1],
+            y=[1],
+            z=[1],
+            mode="markers+text",
+            marker=dict(
+                size=20, color="gold", symbol="star", line=dict(color="black", width=3)
+            ),
+            text=["IDEAL<br>(1,1,1)"],
+            textposition="top center",
+            textfont=dict(size=14, color="gold", family="Arial Black"),
+            name="Perfect Performance",
+            hovertemplate="<b>Perfect Performance Point</b><br>All metrics = 1.0<br>This is the ideal goal<br><extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title={
+            "text": "🌐 3D Interactive Performance Space - Spherical Zones<br><sub>Spheres centered at (1,1,1) • Smaller radius = Better performance • Hover for details</sub>",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 18, "family": "Arial Black"},
+        },
+        scene=dict(
+            xaxis=dict(
+                title="📊 Image Quality (Clarity)",
+                titlefont=dict(size=12, family="Arial Black"),
+                range=[0, 1.3],
+                showgrid=True,
+                gridcolor="lightgray",
+                showbackground=True,
+                backgroundcolor="rgba(230, 230, 250, 0.5)",
+            ),
+            yaxis=dict(
+                title="📈 Training Stability",
+                titlefont=dict(size=12, family="Arial Black"),
+                range=[0, 1.3],
+                showgrid=True,
+                gridcolor="lightgray",
+                showbackground=True,
+                backgroundcolor="rgba(230, 250, 230, 0.5)",
+            ),
+            zaxis=dict(
+                title="⚡ Efficiency",
+                titlefont=dict(size=12, family="Arial Black"),
+                range=[0, 1.3],
+                showgrid=True,
+                gridcolor="lightgray",
+                showbackground=True,
+                backgroundcolor="rgba(250, 230, 230, 0.5)",
+            ),
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.3)),
+            aspectmode="cube",
+        ),
+        showlegend=True,
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="black",
+            borderwidth=2,
+            font=dict(size=11, family="Arial"),
+        ),
+        width=1000,
+        height=800,
+        hovermode="closest",
+    )
+
+    try:
+        fig.write_html(save_path_html)
+        print(f"✅ Interactive HTML saved to: {save_path_html}")
+    except Exception as e:
+        print(f"⚠️ Could not save HTML: {e}")
+
+    create_static_3d_spherical_zone(performance_data, save_path_png, show=False)
+
+    if show:
+        print("\n📊 Displaying interactive 3D visualization...")
+        fig.show()
+
+
+def create_custom_3d_spherical_graph(performance_data, save_path, show=True):
+    """Creates a 3D spherical graph with performance levels."""
+    models = list(performance_data.keys())
+    performances = [d["Clarity (Image Quality)"] for d in performance_data.values()]
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection="3d")
+
+    radii = [0.7, 0.8, 0.9]
+    sphere_colors = ["#FFD700", "#FFA500", "#FF4500"]
+    for i, r in enumerate(radii):
+        u, v = np.linspace(0, 2 * np.pi, 100), np.linspace(0, np.pi, 100)
+        x = r * np.outer(np.cos(u), np.sin(v))
+        y = r * np.outer(np.sin(u), np.sin(v))
+        z = r * np.outer(np.ones(np.size(u)), np.cos(v))
+        ax.plot_surface(x, y, z, color=sphere_colors[i], alpha=0.1)
+
+    num_models = len(models)
+    thetas = [np.pi / 4, 3 * np.pi / 4, 5 * np.pi / 4, 7 * np.pi / 4]
+    phis = [np.pi / 3, np.pi / 3, 2 * np.pi / 3, 2 * np.pi / 3]
+    model_colors = {
+        "VAE": "#FF6B6B",
+        "GAN": "#4ECDC4",
+        "cGAN": "#45B7D1",
+        "DDPM": "#FFA07A",
+    }
+
+    for i in range(num_models):
+        p = performances[i]
+        model_name = models[i]
+        x = p * np.sin(phis[i]) * np.cos(thetas[i])
+        y = p * np.sin(phis[i]) * np.sin(thetas[i])
+        z = p * np.cos(phis[i])
+        ax.scatter(
+            x,
+            y,
+            z,
+            s=200,
+            c=[model_colors[model_name]],
+            depthshade=True,
+            edgecolors="black",
+            linewidth=1,
+        )
+        ax.text(
+            x * 1.1,
+            y * 1.1,
+            z,
+            model_name,
+            fontsize=12,
+            color=model_colors[model_name],
+            weight="bold",
+        )
+
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-1, 1])
+    ax.set_zlim([-1, 1])
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_title(
+        "3D Spherical Performance Visualization", fontsize=16, weight="bold", pad=20
+    )
+
+    from matplotlib.lines import Line2D
+
+    legend_elements = [
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            label=f"Perf. >= {r}",
+            markerfacecolor=c,
+            markersize=10,
+            alpha=0.5,
+        )
+        for r, c in zip(radii, sphere_colors)
+    ]
+    for name, p in zip(models, performances):
+        legend_elements.append(
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="w",
+                label=f"{name} ({p:.2f})",
+                markerfacecolor=model_colors[name],
+                markersize=10,
+            )
+        )
+    ax.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.1, 0.5))
+    ax.view_init(elev=20, azim=30)
+
+    plt.savefig(save_path, bbox_inches="tight", dpi=300)
+    print(f"✓ Custom 3D spherical graph saved to {save_path}")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
+def run_all_visualizations(
+    performance_data, timing_data, losses_dict, output_dir, show=True
+):
+    """Run all visualization functions."""
+    print("\n" + "=" * 75)
+    print("🎨 CREATING COMPREHENSIVE VISUALIZATIONS")
+    print("=" * 75 + "\n")
+
+    vis_dir = f"{output_dir}/visualizations"
+    create_radar_chart(performance_data, f"{vis_dir}/radar_chart.png", show=show)
+    create_heatmap_comparison(
+        performance_data, f"{vis_dir}/heatmap_comparison.png", show=show
+    )
+    create_bar_comparison(performance_data, f"{vis_dir}/bar_comparison.png", show=show)
+    create_training_curves(losses_dict, f"{vis_dir}/training_curves.png", show=show)
+    create_performance_summary_table(
+        performance_data, timing_data, f"{vis_dir}/performance_table.png", show=show
+    )
+    create_interactive_3d_spherical_zone(
+        performance_data,
+        f"{vis_dir}/3d_spherical_interactive.html",
+        f"{vis_dir}/3d_spherical_zone.png",
+        show=show,
+    )
+    create_custom_3d_spherical_graph(
+        performance_data, f"{vis_dir}/3d_spherical_performance.png", show=show
+    )
+
+    print("\n" + "=" * 75)
+    print("✅ ALL VISUALIZATIONS CREATED SUCCESSFULLY!")
+    print("=" * 75)
+
+
+# ============================================================================
 # ANALYSIS FUNCTIONS
 # ============================================================================
 
@@ -1313,6 +1914,25 @@ def analyze_models(
     print("Control: cGAN excels at controllable generation")
     print("Stability: VAE most reliable, GAN most problematic")
     print("Practical Use: Choose based on specific requirements")
+
+    # ==================================
+    # GENERATE ALL VISUALIZATIONS
+    # ==================================
+
+    losses_dict = {
+        "VAE": vae_losses,
+        "GAN": gan_g_losses,
+        "cGAN": cgan_g_losses,
+        "DDPM": ddpm_losses,
+    }
+
+    run_all_visualizations(
+        performance_data,
+        timing_data,
+        losses_dict,
+        output_dir=config.output_dir,
+        show=not config.no_display,
+    )
 
     return performance_data, timing_data
 
