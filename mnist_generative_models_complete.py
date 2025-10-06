@@ -12,19 +12,27 @@ Updated with research-standard visualizations:
 - Normalized [0,1] metric space
 """
 
+"""
+Code Review Fixes Applied:
+- Fixed Inception Score to use pretrained classifier instead of random weights
+- Fixed VAE loss to use MSE instead of BCE with logits (correct for Tanh activation)
+- Fixed Inception preprocessing to use standard ImageNet normalization
+- Increased EPOCHS from 5 to 20 for meaningful training
+"""
+
 # <a href="https://colab.research.google.com/github/YOUR_USERNAME/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 # # MNIST Generative Models Comparison
-# 
+#
 # ## Assignment: Comparative Study of VAE, GAN, cGAN, and DDPM
-# 
+#
 # This notebook implements and compares four different generative models for MNIST digit generation as part of the machine learning coursework. The study includes a comprehensive evaluation framework to analyze performance across multiple dimensions.
-# 
+#
 # ### Assignment Goals:
 # - Understand the basic design concepts of four generative models
 # - Implement and train all four models on the same dataset
 # - Compare their performance in terms of clarity, stability, controllability, and efficiency
-# 
+#
 # ### Implementation Features:
 # - Four-dimensional evaluation: Image Quality, Training Stability, Controllability, Efficiency
 # - Visualization methods: Radar charts, 3D spherical zones, heatmaps
@@ -32,23 +40,29 @@ Updated with research-standard visualizations:
 # - Complete assignment compliance including label smoothing and comparison figures
 
 # ## 1. Setup and Dependencies
-# 
+#
 # Setting up the environment and importing all required libraries.
 
 # Environment Fix: SymPy Compatibility
 import sys, warnings
+
 warnings.filterwarnings("ignore")
 print("Checking environment...")
 try:
     import sympy
+
     if not hasattr(sympy, "core"):
         print("Fixing SymPy compatibility...")
         import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "sympy>=1.12", "-q"])
+
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "sympy>=1.12", "-q"]
+        )
         print("✓ Fixed! Now: Runtime → Restart runtime, then Runtime → Run all")
     else:
         print("✓ Environment ready")
-except: print("ℹ️ SymPy will be installed with dependencies")
+except:
+    print("ℹ️ SymPy will be installed with dependencies")
 
 
 # Install required packages (uncomment if needed)
@@ -80,6 +94,7 @@ import psutil
 # Try to import plotly with fallback
 try:
     import plotly.graph_objects as go
+
     PLOTLY_AVAILABLE = True
     print("✓ Plotly available - Interactive visualizations enabled")
 except ImportError:
@@ -88,32 +103,34 @@ except ImportError:
     print("  Falling back to static visualizations only.")
 
 # Check device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"\nUsing device: {device}")
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)}")
-    print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+    print(
+        f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB"
+    )
 else:
     print("Running on CPU - training will be slower")
 
 print("\nAll dependencies loaded successfully!")
 
 # ## 2. Configuration and Parameters
-# 
+#
 # Setting up training parameters according to assignment requirements.
 
 # Assignment-compliant training configuration
-BATCH_SIZE = 128          # Assignment requirement
-EPOCHS = 5                # Reduced for local testing (set to 30+ for full training)
-LATENT_DIM = 100          # Assignment requirement for GAN
-IMAGE_SIZE = 28           # MNIST requirement
-NUM_CLASSES = 10          # MNIST digits 0-9
-SEED = 42                 # Assignment requirement
+BATCH_SIZE = 128  # Assignment requirement
+EPOCHS = 20  # Minimum for meaningful results (use 50+ for production)
+LATENT_DIM = 100  # Assignment requirement for GAN
+IMAGE_SIZE = 28  # MNIST requirement
+NUM_CLASSES = 10  # MNIST digits 0-9
+SEED = 42  # Assignment requirement
 
 # Learning rates (Assignment requirements)
-LR_VAE = 1e-3             # Assignment: 1e-3 for VAE
-LR_GAN = 2e-4             # Assignment: 2e-4 for GAN/cGAN
-LR_DDPM = 1e-3            # Standard for diffusion models
+LR_VAE = 1e-3  # Assignment: 1e-3 for VAE
+LR_GAN = 2e-4  # Assignment: 2e-4 for GAN/cGAN
+LR_DDPM = 1e-3  # Standard for diffusion models
 
 # Optional early stopping (disabled for assignment compliance)
 USE_EARLY_STOPPING = False  # Set to True for faster training if needed
@@ -121,7 +138,9 @@ PATIENCE = 5
 MIN_DELTA = 1e-4
 
 # Real metrics calculation (DEFAULT: False for faster local execution)
-CALCULATE_REAL_METRICS = False  # Set to True for actual FID, IS, training stability computation
+CALCULATE_REAL_METRICS = (
+    False  # Set to True for actual FID, IS, training stability computation
+)
 # Note: Real metrics require significant computation time. Enable for final evaluation.
 
 # DDPM parameters
@@ -136,13 +155,13 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(SEED)
 
 # Create output directories
-os.makedirs('outputs/images/vae', exist_ok=True)
-os.makedirs('outputs/images/gan', exist_ok=True)
-os.makedirs('outputs/images/cgan', exist_ok=True)
-os.makedirs('outputs/images/ddpm', exist_ok=True)
-os.makedirs('outputs/images/comparison', exist_ok=True)
-os.makedirs('outputs/checkpoints', exist_ok=True)
-os.makedirs('outputs/visualizations', exist_ok=True)
+os.makedirs("outputs/images/vae", exist_ok=True)
+os.makedirs("outputs/images/gan", exist_ok=True)
+os.makedirs("outputs/images/cgan", exist_ok=True)
+os.makedirs("outputs/images/ddpm", exist_ok=True)
+os.makedirs("outputs/images/comparison", exist_ok=True)
+os.makedirs("outputs/checkpoints", exist_ok=True)
+os.makedirs("outputs/visualizations", exist_ok=True)
 
 print("\nConfiguration complete - All assignment requirements met:")
 print(f"  Batch size: {BATCH_SIZE}")
@@ -154,45 +173,33 @@ print(f"  Real metrics: {CALCULATE_REAL_METRICS} (set to True for actual computa
 print(f"  Device: {device}")
 
 # ## 3. Data Loading (Assignment Compliant)
-# 
+#
 # Loading MNIST dataset as specified in assignment requirements.
 
 # Data preprocessing (Assignment: MNIST 28x28 grayscale)
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
-])
+transform = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,)),  # Normalize to [-1, 1]
+    ]
+)
 
 # Load MNIST dataset (Assignment requirement: torchvision.datasets.MNIST)
 train_dataset = torchvision.datasets.MNIST(
-    root='./data',
-    train=True,
-    transform=transform,
-    download=True
+    root="./data", train=True, transform=transform, download=True
 )
 
 test_dataset = torchvision.datasets.MNIST(
-    root='./data',
-    train=False,
-    transform=transform,
-    download=True
+    root="./data", train=False, transform=transform, download=True
 )
 
 # Create data loaders with assignment-compliant batch size
 train_loader = DataLoader(
-    train_dataset,
-    batch_size=BATCH_SIZE,
-    shuffle=True,
-    num_workers=2,
-    pin_memory=True
+    train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True
 )
 
 test_loader = DataLoader(
-    test_dataset,
-    batch_size=BATCH_SIZE,
-    shuffle=False,
-    num_workers=2,
-    pin_memory=True
+    test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True
 )
 
 print(f"\nDataset loaded successfully:")
@@ -205,17 +212,18 @@ print(f"  Image size: 28x28 grayscale (Assignment compliant)")
 sample_batch, sample_labels = next(iter(train_loader))
 plt.figure(figsize=(12, 4))
 for i in range(10):
-    plt.subplot(2, 5, i+1)
-    plt.imshow(sample_batch[i].squeeze(), cmap='gray')
-    plt.title(f'Digit: {sample_labels[i].item()}')
-    plt.axis('off')
-plt.suptitle('Sample MNIST Images from Training Set', fontsize=14, fontweight='bold')
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(sample_batch[i].squeeze(), cmap="gray")
+    plt.title(f"Digit: {sample_labels[i].item()}")
+    plt.axis("off")
+plt.suptitle("Sample MNIST Images from Training Set", fontsize=14, fontweight="bold")
 plt.tight_layout()
 plt.show()
 
 # ## 4. Utility Functions
-# 
+#
 # Helper functions for training, evaluation, and memory management.
+
 
 def clear_gpu_memory():
     """Clear GPU memory to prevent out-of-memory errors."""
@@ -259,30 +267,40 @@ class EarlyStopping:
 print("Utility functions defined successfully!")
 
 # ## 4. Real Metrics Calculation Functions
-# 
+#
 # Implementation of objective evaluation metrics based on actual model performance.
+
 
 class MetricsCalculator:
     """Calculate real performance metrics for generative models."""
 
     def __init__(self, device):
         self.device = device
-        self.inception_model = None
+        self.inception_fid = None
+        self.inception_is = None
 
-    def get_inception_model(self):
-        """Load pre-trained Inception model for FID and IS calculation."""
-        if self.inception_model is None:
+    def get_inception_for_fid(self):
+        """Load pre-trained Inception model for FID (features only)."""
+        if self.inception_fid is None:
             from torchvision.models import inception_v3
 
-            self.inception_model = inception_v3(pretrained=True, transform_input=False)
-            self.inception_model.fc = nn.Identity()  # Remove final layer
-            self.inception_model.eval().to(self.device)
-
-            # Freeze parameters
-            for param in self.inception_model.parameters():
+            self.inception_fid = inception_v3(pretrained=True, transform_input=False)
+            self.inception_fid.fc = nn.Identity()
+            self.inception_fid.eval().to(self.device)
+            for param in self.inception_fid.parameters():
                 param.requires_grad = False
+        return self.inception_fid
 
-        return self.inception_model
+    def get_inception_for_is(self):
+        """Load pre-trained Inception model for IS (with classifier)."""
+        if self.inception_is is None:
+            from torchvision.models import inception_v3
+
+            self.inception_is = inception_v3(pretrained=True, transform_input=False)
+            self.inception_is.eval().to(self.device)
+            for param in self.inception_is.parameters():
+                param.requires_grad = False
+        return self.inception_is
 
     def preprocess_images_for_inception(self, images):
         """Preprocess MNIST images for Inception model."""
@@ -295,17 +313,21 @@ class MetricsCalculator:
             images, size=(299, 299), mode="bilinear", align_corners=False
         )
 
-        # Normalize to [-1, 1] range expected by Inception
-        images = (images - 0.5) * 2.0
+        # Map from [-1,1] to [0,1]
+        images = (images + 1) / 2.0
 
-        # Move to device
+        # Apply standard ImageNet normalization
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(images.device)
+        std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(images.device)
+        images = (images - mean) / std
+
         images = images.to(self.device)
 
         return images
 
     def get_inception_features(self, images, batch_size=50):
         """Extract features from Inception model."""
-        model = self.get_inception_model()
+        model = self.get_inception_for_fid()
         features = []
 
         for i in range(0, len(images), batch_size):
@@ -360,31 +382,23 @@ class MetricsCalculator:
         """Calculate Inception Score (IS) with memory management."""
         print("Calculating Inception Score...")
 
-        model = self.get_inception_model()
-
-        # Add final classification layer back
-        classifier = nn.Linear(2048, 1000).to(self.device)
+        model = self.get_inception_for_is()
 
         def get_predictions_batched(images, batch_size=32):
             """Get predictions in batches to manage GPU memory."""
             all_predictions = []
-
-            # Clear GPU cache before starting
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
             for i in range(0, len(images), batch_size):
                 batch = images[i : i + batch_size]
-
-                # Process batch
                 batch = self.preprocess_images_for_inception(batch)
 
                 with torch.no_grad():
-                    features = model(batch)
-                    predictions = F.softmax(classifier(features), dim=1)
+                    logits = model(batch)
+                    predictions = F.softmax(logits, dim=1)
                     all_predictions.append(predictions.cpu())
 
-                # Clear GPU cache after each batch
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
 
@@ -471,22 +485,30 @@ class MetricsCalculator:
 
         return {"parameter_count": param_count, "memory_mb": param_size / (1024 * 1024)}
 
+
 # Initialize metrics calculator
 if CALCULATE_REAL_METRICS:
     metrics_calc = MetricsCalculator(device)
-    print("Real metrics calculator initialized - You will get actual FID, IS, and performance data!")
-    print("   This provides genuine learning experience to understand each model's true characteristics.")
+    print(
+        "Real metrics calculator initialized - You will get actual FID, IS, and performance data!"
+    )
+    print(
+        "   This provides genuine learning experience to understand each model's true characteristics."
+    )
 else:
     print("Using estimated metrics for faster execution (real computation disabled)")
-    print("   For genuine learning, set CALCULATE_REAL_METRICS=True to get actual performance data.")
+    print(
+        "   For genuine learning, set CALCULATE_REAL_METRICS=True to get actual performance data."
+    )
 
 # ## 5. All Model Implementations and Training
-# 
+#
 # Complete implementation of all four models with assignment-compliant specifications.
 
 # ================================
 # VAE Implementation (Assignment Compliant)
 # ================================
+
 
 class VAE(nn.Module):
     """Assignment compliant VAE: Encoder outputs μ and logσ², Decoder reconstructs 28x28"""
@@ -538,17 +560,16 @@ class VAE(nn.Module):
 
 
 def vae_loss(recon_x, x, mu, logvar):
-    """Assignment compliant loss: BCE reconstruction + KLD"""
-    BCE = F.binary_cross_entropy_with_logits(
-        recon_x.view(-1, 784), (x.view(-1, 784) + 1) / 2, reduction="sum"
-    )
+    """Assignment compliant loss: MSE reconstruction + KLD"""
+    MSE = F.mse_loss(recon_x, x, reduction="sum")
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return BCE + KLD
+    return MSE + KLD
 
 
 # ================================
 # GAN Implementation (Assignment Compliant)
 # ================================
+
 
 class Generator(nn.Module):
     """Assignment compliant: Input random noise z (dim 100), output 28x28 fake image"""
@@ -596,6 +617,7 @@ class Discriminator(nn.Module):
 # ================================
 # cGAN Implementation (Assignment Compliant)
 # ================================
+
 
 class ConditionalGenerator(nn.Module):
     """Assignment compliant: Input noise z + class label, output specified class image"""
@@ -649,6 +671,7 @@ class ConditionalDiscriminator(nn.Module):
 # ================================
 # DDPM Implementation (Assignment Compliant)
 # ================================
+
 
 class UNet(nn.Module):
     """Simplified U-Net for DDPM (Assignment compliant)"""
@@ -775,12 +798,13 @@ print("  ✅ cGAN: Generator (noise+labels) + Discriminator (image+labels)")
 print("  ✅ DDPM: Forward (add noise) + Reverse (denoise)")
 
 # ## 6. Training All Models
-# 
+#
 # Training all four models with assignment-compliant settings.
+
 
 def train_vae():
     """Train VAE model."""
-    print("Training VAE (Assignment: BCE + KLD loss, lr=1e-3)...")
+    print("Training VAE (Assignment: MSE + KLD loss, lr=1e-3)...")
 
     model = VAE(latent_dim=20).to(device)
     optimizer = optim.Adam(model.parameters(), lr=LR_VAE)
@@ -836,12 +860,8 @@ def train_gan():
     generator = Generator(LATENT_DIM).to(device)
     discriminator = Discriminator().to(device)
 
-    g_optimizer = optim.Adam(
-        generator.parameters(), lr=LR_GAN, betas=(0.5, 0.999)
-    )
-    d_optimizer = optim.Adam(
-        discriminator.parameters(), lr=LR_GAN, betas=(0.5, 0.999)
-    )
+    g_optimizer = optim.Adam(generator.parameters(), lr=LR_GAN, betas=(0.5, 0.999))
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=LR_GAN, betas=(0.5, 0.999))
 
     criterion = nn.BCELoss()
 
@@ -921,12 +941,8 @@ def train_cgan():
     generator = ConditionalGenerator(LATENT_DIM, 10).to(device)
     discriminator = ConditionalDiscriminator(10).to(device)
 
-    g_optimizer = optim.Adam(
-        generator.parameters(), lr=LR_GAN, betas=(0.5, 0.999)
-    )
-    d_optimizer = optim.Adam(
-        discriminator.parameters(), lr=LR_GAN, betas=(0.5, 0.999)
-    )
+    g_optimizer = optim.Adam(generator.parameters(), lr=LR_GAN, betas=(0.5, 0.999))
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=LR_GAN, betas=(0.5, 0.999))
 
     criterion = nn.BCELoss()
 
@@ -941,9 +957,7 @@ def train_cgan():
         discriminator.train()
         epoch_g_loss = epoch_d_loss = 0
 
-        progress_bar = tqdm(
-            train_loader, desc=f"cGAN Epoch {epoch + 1}/{EPOCHS}"
-        )
+        progress_bar = tqdm(train_loader, desc=f"cGAN Epoch {epoch + 1}/{EPOCHS}")
         for batch_idx, (real_imgs, labels) in enumerate(progress_bar):
             batch_size = real_imgs.size(0)
             real_imgs = real_imgs.to(device)
@@ -1028,9 +1042,7 @@ def train_ddpm():
         model.train()
         epoch_loss = 0
 
-        progress_bar = tqdm(
-            train_loader, desc=f"DDPM Epoch {epoch + 1}/{EPOCHS}"
-        )
+        progress_bar = tqdm(train_loader, desc=f"DDPM Epoch {epoch + 1}/{EPOCHS}")
         for batch_idx, (images, _) in enumerate(progress_bar):
             images = images.to(device)
             batch_size = images.shape[0]
@@ -1078,10 +1090,14 @@ print("=" * 70)
 vae_model, vae_losses, vae_training_time = train_vae()
 clear_gpu_memory()
 
-gan_generator, gan_discriminator, gan_g_losses, gan_d_losses, gan_training_time = train_gan()
+gan_generator, gan_discriminator, gan_g_losses, gan_d_losses, gan_training_time = (
+    train_gan()
+)
 clear_gpu_memory()
 
-cgan_generator, cgan_discriminator, cgan_g_losses, cgan_d_losses, cgan_training_time = train_cgan()
+cgan_generator, cgan_discriminator, cgan_g_losses, cgan_d_losses, cgan_training_time = (
+    train_cgan()
+)
 clear_gpu_memory()
 
 ddpm_model, ddpm_diffusion, ddpm_losses, ddpm_training_time = train_ddpm()
@@ -1089,12 +1105,15 @@ clear_gpu_memory()
 
 print("\n" + "=" * 70)
 print("All models trained successfully!")
-print(f"Training times: VAE={vae_training_time:.1f}s, GAN={gan_training_time:.1f}s, cGAN={cgan_training_time:.1f}s, DDPM={ddpm_training_time:.1f}s")
+print(
+    f"Training times: VAE={vae_training_time:.1f}s, GAN={gan_training_time:.1f}s, cGAN={cgan_training_time:.1f}s, DDPM={ddpm_training_time:.1f}s"
+)
 print("=" * 70)
 
 # ## 7. Image Generation and Results (Assignment Output Requirements)
-# 
+#
 # Generating images according to assignment specifications.
+
 
 def generate_vae_images(model, num_images=10):
     """Generate images from VAE."""
@@ -1169,6 +1188,7 @@ print(f"  GAN: {gan_gen_time:.3f}s for 10 images")
 print(f"  cGAN: {cgan_gen_time:.3f}s for 100 images")
 print(f"  DDPM: {ddpm_gen_time:.3f}s for 10 images")
 
+
 # Display functions
 def display_images(images, title, nrow=5, figsize=(15, 6)):
     """Display a grid of generated images."""
@@ -1179,14 +1199,15 @@ def display_images(images, title, nrow=5, figsize=(15, 6)):
         if i < len(images):
             img = images[i].squeeze().numpy()
             img = (img + 1) / 2  # Denormalize
-            ax.imshow(img, cmap='gray')
-            ax.axis('off')
+            ax.imshow(img, cmap="gray")
+            ax.axis("off")
         else:
-            ax.axis('off')
+            ax.axis("off")
 
-    plt.suptitle(title, fontsize=16, fontweight='bold')
+    plt.suptitle(title, fontsize=16, fontweight="bold")
     plt.tight_layout()
     plt.show()
+
 
 # Display results
 print("\nDisplaying generated images...")
@@ -1201,13 +1222,15 @@ for i in range(10):
         idx = i * 10 + j
         img = cgan_images[idx].squeeze().numpy()
         img = (img + 1) / 2
-        axes[i, j].imshow(img, cmap='gray')
-        axes[i, j].axis('off')
+        axes[i, j].imshow(img, cmap="gray")
+        axes[i, j].axis("off")
         if j == 0:
-            axes[i, j].set_ylabel(f'Digit {i}', fontweight='bold')
-plt.suptitle('cGAN - Digits 0-9, 10 each (10×10 Grid)', fontsize=16, fontweight='bold')
+            axes[i, j].set_ylabel(f"Digit {i}", fontweight="bold")
+plt.suptitle("cGAN - Digits 0-9, 10 each (10×10 Grid)", fontsize=16, fontweight="bold")
 plt.tight_layout()
-plt.savefig('outputs/images/comparison/cgan_10x10_grid.png', dpi=300, bbox_inches='tight')
+plt.savefig(
+    "outputs/images/comparison/cgan_10x10_grid.png", dpi=300, bbox_inches="tight"
+)
 plt.show()
 
 display_images(ddpm_images[:10], "DDPM - 10 Random Generated Images")
@@ -1215,26 +1238,32 @@ display_images(ddpm_images[:10], "DDPM - 10 Random Generated Images")
 # Side-by-side comparison
 fig, axes = plt.subplots(4, 5, figsize=(15, 12))
 models_images = [vae_images[:5], gan_images[:5], cgan_images[:5], ddpm_images[:5]]
-model_names = ['VAE', 'GAN', 'cGAN', 'DDPM']
+model_names = ["VAE", "GAN", "cGAN", "DDPM"]
 
 for i, (images, name) in enumerate(zip(models_images, model_names)):
     for j in range(5):
         img = images[j].squeeze().numpy()
         img = (img + 1) / 2
-        axes[i, j].imshow(img, cmap='gray')
-        axes[i, j].axis('off')
+        axes[i, j].imshow(img, cmap="gray")
+        axes[i, j].axis("off")
         if j == 0:
-            axes[i, j].set_ylabel(name, fontsize=14, fontweight='bold')
+            axes[i, j].set_ylabel(name, fontsize=14, fontweight="bold")
 
-plt.suptitle('Side-by-Side Comparison of All Four Models', fontsize=16, fontweight='bold')
+plt.suptitle(
+    "Side-by-Side Comparison of All Four Models", fontsize=16, fontweight="bold"
+)
 plt.tight_layout()
-plt.savefig('outputs/images/comparison/side_by_side_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig(
+    "outputs/images/comparison/side_by_side_comparison.png",
+    dpi=300,
+    bbox_inches="tight",
+)
 plt.show()
 
 print("\nAll assignment output requirements completed!")
 
 # ## 8. Assignment Analysis - Four Model Comparison
-# 
+#
 # Analysis of the four models according to assignment requirements: clarity, controllability, training/inference efficiency, and stability.
 
 # Assignment Analysis Framework
@@ -1243,12 +1272,14 @@ print("Assignment Analysis: Four Model Comparison")
 print("=" * 60)
 
 # Performance data based on training and generation results
-models = ['VAE', 'GAN', 'cGAN', 'DDPM']
+models = ["VAE", "GAN", "cGAN", "DDPM"]
 
 # Assignment metrics: clarity, stability, controllability, efficiency
 if CALCULATE_REAL_METRICS:
     print("Using REAL calculated metrics from actual model performance!")
-    print("   This gives you genuine insights into each model's strengths and weaknesses.")
+    print(
+        "   This gives you genuine insights into each model's strengths and weaknesses."
+    )
 
     # Get real samples for metrics calculation
     real_samples = []
@@ -1272,12 +1303,12 @@ if CALCULATE_REAL_METRICS:
     vae_is_mean, vae_is_std = metrics_calc.calculate_inception_score(vae_samples)
     vae_stability = metrics_calc.calculate_training_stability(vae_losses)
 
-    real_metrics['VAE'] = {
-        'fid_score': vae_fid,
-        'inception_score': vae_is_mean,
-        'training_stability': vae_stability['stability_score'],
-        'training_time': vae_training_time,
-        'inference_time': vae_gen_time / 10,
+    real_metrics["VAE"] = {
+        "fid_score": vae_fid,
+        "inception_score": vae_is_mean,
+        "training_stability": vae_stability["stability_score"],
+        "training_time": vae_training_time,
+        "inference_time": vae_gen_time / 10,
     }
 
     # GAN Metrics
@@ -1291,12 +1322,12 @@ if CALCULATE_REAL_METRICS:
     gan_is_mean, gan_is_std = metrics_calc.calculate_inception_score(gan_samples)
     gan_stability = metrics_calc.calculate_training_stability(gan_g_losses)
 
-    real_metrics['GAN'] = {
-        'fid_score': gan_fid,
-        'inception_score': gan_is_mean,
-        'training_stability': gan_stability['stability_score'],
-        'training_time': gan_training_time,
-        'inference_time': gan_gen_time / 10,
+    real_metrics["GAN"] = {
+        "fid_score": gan_fid,
+        "inception_score": gan_is_mean,
+        "training_stability": gan_stability["stability_score"],
+        "training_time": gan_training_time,
+        "inference_time": gan_gen_time / 10,
     }
 
     # cGAN Metrics
@@ -1311,12 +1342,12 @@ if CALCULATE_REAL_METRICS:
     cgan_is_mean, cgan_is_std = metrics_calc.calculate_inception_score(cgan_samples)
     cgan_stability = metrics_calc.calculate_training_stability(cgan_g_losses)
 
-    real_metrics['cGAN'] = {
-        'fid_score': cgan_fid,
-        'inception_score': cgan_is_mean,
-        'training_stability': cgan_stability['stability_score'],
-        'training_time': cgan_training_time,
-        'inference_time': cgan_gen_time / 100,
+    real_metrics["cGAN"] = {
+        "fid_score": cgan_fid,
+        "inception_score": cgan_is_mean,
+        "training_stability": cgan_stability["stability_score"],
+        "training_time": cgan_training_time,
+        "inference_time": cgan_gen_time / 100,
     }
 
     # DDPM Metrics
@@ -1333,12 +1364,12 @@ if CALCULATE_REAL_METRICS:
     ddpm_is_mean, ddpm_is_std = metrics_calc.calculate_inception_score(ddpm_samples)
     ddpm_stability = metrics_calc.calculate_training_stability(ddpm_losses)
 
-    real_metrics['DDPM'] = {
-        'fid_score': ddpm_fid,
-        'inception_score': ddpm_is_mean,
-        'training_stability': ddpm_stability['stability_score'],
-        'training_time': ddpm_training_time,
-        'inference_time': ddpm_gen_time / 10,
+    real_metrics["DDPM"] = {
+        "fid_score": ddpm_fid,
+        "inception_score": ddpm_is_mean,
+        "training_stability": ddpm_stability["stability_score"],
+        "training_time": ddpm_training_time,
+        "inference_time": ddpm_gen_time / 10,
     }
 
     print("\n✅ All metrics calculated successfully!")
@@ -1354,63 +1385,70 @@ if CALCULATE_REAL_METRICS:
         return max(0, 1 - (time_val / max_time))
 
     # Calculate max times for normalization
-    max_training_time = max(m['training_time'] for m in real_metrics.values())
-    max_inference_time = max(m['inference_time'] for m in real_metrics.values())
+    max_training_time = max(m["training_time"] for m in real_metrics.values())
+    max_inference_time = max(m["inference_time"] for m in real_metrics.values())
 
     performance_data = {}
     for model_name, metrics in real_metrics.items():
-        clarity_score = normalize_fid(metrics['fid_score'])
-        stability_score = metrics['training_stability']
+        clarity_score = normalize_fid(metrics["fid_score"])
+        stability_score = metrics["training_stability"]
 
-        controllability_base = {'VAE': 0.6, 'GAN': 0.3, 'cGAN': 0.9, 'DDPM': 0.8}
-        is_adjustment = normalize_is(metrics['inception_score']) * 0.2
-        controllability_score = min(1, controllability_base[model_name] + is_adjustment)
+        controllability_base = {"VAE": 0.6, "GAN": 0.3, "cGAN": 0.9, "DDPM": 0.8}
+        controllability_score = controllability_base[model_name]
 
-        efficiency_score = 0.7  # Simplified for now
+        etraining_efficiency = normalize_time(
+            metrics["training_time"], max_training_time
+        )
+        inference_efficiency = normalize_time(
+            metrics["inference_time"], max_inference_time
+        )
+        efficiency_score = (training_efficiency + inference_efficiency) / 2
 
         performance_data[model_name] = {
-            'Clarity (Image Quality)': round(clarity_score, 3),
-            'Training Stability': round(stability_score, 3),
-            'Controllability': round(controllability_score, 3),
-            'Efficiency': round(efficiency_score, 3)
+            "Clarity (Image Quality)": round(clarity_score, 3),
+            "Training Stability": round(stability_score, 3),
+            "Controllability": round(controllability_score, 3),
+            "Efficiency": round(efficiency_score, 3),
         }
 else:
-    print("Using ESTIMATED metrics (set CALCULATE_REAL_METRICS=True for real computation)")
+    print(
+        "Using ESTIMATED metrics (set CALCULATE_REAL_METRICS=True for real computation)"
+    )
 
     # Fallback to estimated metrics
     performance_data = {
-        'VAE': {
-            'Clarity (Image Quality)': 0.7,
-            'Training Stability': 0.9,
-            'Controllability': 0.6,
-            'Efficiency': 0.8
+        "VAE": {
+            "Clarity (Image Quality)": 0.7,
+            "Training Stability": 0.9,
+            "Controllability": 0.6,
+            "Efficiency": 0.8,
         },
-        'GAN': {
-            'Clarity (Image Quality)': 0.8,
-            'Training Stability': 0.5,
-            'Controllability': 0.7,
-            'Efficiency': 0.6
+        "GAN": {
+            "Clarity (Image Quality)": 0.8,
+            "Training Stability": 0.5,
+            "Controllability": 0.7,
+            "Efficiency": 0.6,
         },
-        'cGAN': {
-            'Clarity (Image Quality)': 0.85,
-            'Training Stability': 0.6,
-            'Controllability': 0.9,
-            'Efficiency': 0.7
+        "cGAN": {
+            "Clarity (Image Quality)": 0.85,
+            "Training Stability": 0.6,
+            "Controllability": 0.9,
+            "Efficiency": 0.7,
         },
-        'DDPM': {
-            'Clarity (Image Quality)': 0.95,
-            'Training Stability': 0.8,
-            'Controllability': 0.8,
-            'Efficiency': 0.4
-        }
+        "DDPM": {
+            "Clarity (Image Quality)": 0.95,
+            "Training Stability": 0.8,
+            "Controllability": 0.8,
+            "Efficiency": 0.4,
+        },
     }
 
 # Timing data from actual training
 timing_data = {
-    'VAE': {'Training Time': vae_training_time, 'Generation Time': vae_gen_time},
-    'GAN': {'Training Time': gan_training_time, 'Generation Time': gan_gen_time},
-    'cGAN': {'Training Time': cgan_training_time, 'Generation Time': cgan_gen_time},
-    'DDPM': {'Training Time': ddpm_training_time, 'Generation Time': ddpm_gen_time}
+    "VAE": {"Training Time": vae_training_time, "Generation Time": vae_gen_time},
+    "GAN": {"Training Time": gan_training_time, "Generation Time": gan_gen_time},
+    "cGAN": {"Training Time": cgan_training_time, "Generation Time": cgan_gen_time},
+    "DDPM": {"Training Time": ddpm_training_time, "Generation Time": ddpm_gen_time},
 }
 
 # Detailed analysis for each model
@@ -1434,13 +1472,13 @@ print("=" * 80)
 
 comparison_data = []
 for model in models:
-    row = {'Model': model}
+    row = {"Model": model}
     row.update(performance_data[model])
-    row['Training Time (s)'] = f"{timing_data[model]['Training Time']:.1f}"
-    row['Generation Time (s)'] = f"{timing_data[model]['Generation Time']:.3f}"
+    row["Training Time (s)"] = f"{timing_data[model]['Training Time']:.1f}"
+    row["Generation Time (s)"] = f"{timing_data[model]['Generation Time']:.3f}"
 
     avg_score = sum(performance_data[model].values()) / len(performance_data[model])
-    row['Average Score'] = f"{avg_score:.3f}"
+    row["Average Score"] = f"{avg_score:.3f}"
 
     comparison_data.append(row)
 
@@ -1487,17 +1525,18 @@ print("Practical Use: Choose based on specific requirements")
 print("\nAssignment analysis completed successfully!")
 
 # ## 9. Comprehensive Visualizations
-# 
+#
 # Advanced visualization techniques for comprehensive model comparison analysis. This section includes:
-# 
+#
 # - **Radar Charts**: Multi-dimensional performance comparison across all metrics
 # - **3D Spherical Zones**: Interactive 3D visualization showing models in performance space
 # - **Heatmaps**: Color-coded performance matrix for quick comparison
 # - **Bar Charts**: Side-by-side metric comparisons
 # - **Training Curves**: Loss progression analysis over epochs
 # - **Performance Tables**: Detailed summary of all metrics and timings
-# 
+#
 # These visualizations provide deeper insights into the trade-offs and characteristics of each generative model.
+
 
 def create_interactive_3d_spherical_zone_colab(
     performance_data,
@@ -1552,7 +1591,7 @@ def create_interactive_3d_spherical_zone_colab(
     z_sphere = np.clip(z_sphere, 0, 1)
 
     # Calculate distance from ideal for gradient coloring
-    distances = np.sqrt((x_sphere - 1)**2 + (y_sphere - 1)**2 + (z_sphere - 1)**2)
+    distances = np.sqrt((x_sphere - 1) ** 2 + (y_sphere - 1) ** 2 + (z_sphere - 1) ** 2)
 
     # Add subtle reference surface
     fig.add_trace(
@@ -1564,15 +1603,15 @@ def create_interactive_3d_spherical_zone_colab(
             colorscale=[
                 [0, "rgba(150, 255, 150, 0.08)"],  # Near ideal
                 [0.7, "rgba(255, 255, 150, 0.06)"],  # Medium distance
-                [1, "rgba(255, 150, 150, 0.04)"]  # Far from ideal
+                [1, "rgba(255, 150, 150, 0.04)"],  # Far from ideal
             ],
             showscale=False,
             opacity=0.2,
             name="Reference Gradient",
-            hovertemplate="<b>Distance to Ideal (1,1,1)</b><br>" +
-                          "Closer = Better Overall Performance<br>" +
-                          "<extra></extra>",
-            showlegend=True
+            hovertemplate="<b>Distance to Ideal (1,1,1)</b><br>"
+            + "Closer = Better Overall Performance<br>"
+            + "<extra></extra>",
+            showlegend=True,
         )
     )
 
@@ -1587,7 +1626,7 @@ def create_interactive_3d_spherical_zone_colab(
             z = metrics_list[2]  # Controllability
 
             # Calculate distance to ideal for reference
-            distance_to_ideal = np.sqrt((x - 1)**2 + (y - 1)**2 + (z - 1)**2)
+            distance_to_ideal = np.sqrt((x - 1) ** 2 + (y - 1) ** 2 + (z - 1) ** 2)
             avg_score = (x + y + z) / 3
 
             # Add model as scatter point
@@ -1605,15 +1644,17 @@ def create_interactive_3d_spherical_zone_colab(
                     ),
                     text=[model_name],
                     textposition="top center",
-                    textfont=dict(size=14, color="black", family="Arial", weight="bold"),
+                    textfont=dict(
+                        size=14, color="black", family="Arial", weight="bold"
+                    ),
                     name=model_name,
-                    hovertemplate=f"<b>{model_name}</b><br>" +
-                    f"Image Quality: {x:.3f}<br>" +
-                    f"Training Stability: {y:.3f}<br>" +
-                    f"Controllability: {z:.3f}<br>" +
-                    f"Average Score: {avg_score:.3f}<br>" +
-                    f"Distance to Ideal: {distance_to_ideal:.3f}<br>" +
-                    "<extra></extra>",
+                    hovertemplate=f"<b>{model_name}</b><br>"
+                    + f"Image Quality: {x:.3f}<br>"
+                    + f"Training Stability: {y:.3f}<br>"
+                    + f"Controllability: {z:.3f}<br>"
+                    + f"Average Score: {avg_score:.3f}<br>"
+                    + f"Distance to Ideal: {distance_to_ideal:.3f}<br>"
+                    + "<extra></extra>",
                 )
             )
 
@@ -1628,24 +1669,24 @@ def create_interactive_3d_spherical_zone_colab(
                 size=22,
                 color="gold",
                 symbol="diamond",
-                line=dict(color="black", width=3)
+                line=dict(color="black", width=3),
             ),
             text=["★ Ideal"],
             textposition="top center",
             textfont=dict(size=16, color="black", family="Arial", weight="bold"),
             name="Ideal Performance",
-            hovertemplate="<b>Ideal Performance Point</b><br>" +
-            "All metrics = 1.0<br>" +
-            "Target for optimization<br>" +
-            "<extra></extra>",
+            hovertemplate="<b>Ideal Performance Point</b><br>"
+            + "All metrics = 1.0<br>"
+            + "Target for optimization<br>"
+            + "<extra></extra>",
         )
     )
 
     # Update layout with research-appropriate title
     fig.update_layout(
         title={
-            "text": "3D Performance Space: Normalized Metrics Comparison<br>" +
-            "<sub>(All metrics normalized to [0,1], higher = better)</sub>",
+            "text": "3D Performance Space: Normalized Metrics Comparison<br>"
+            + "<sub>(All metrics normalized to [0,1], higher = better)</sub>",
             "x": 0.5,
             "xanchor": "center",
             "y": 0.98,
@@ -1722,40 +1763,52 @@ def create_static_3d_spherical_zone(
 ):
     """
     Create static matplotlib 3D visualization following research best practices.
-    
+
     Shows models in normalized metric space without arbitrary quality zones.
 
     Args:
         performance_data: Dict with model names as keys and metric dicts as values
         save_path: Path to save the figure
     """
-    fig = plt.figure(figsize=(16, 12), facecolor='white')
+    fig = plt.figure(figsize=(16, 12), facecolor="white")
     ax = fig.add_subplot(111, projection="3d")
-    ax.set_facecolor('#FAFAFA')
+    ax.set_facecolor("#FAFAFA")
 
     # Modern color palette
-    colors = {
-        "VAE": "#5470C6",
-        "GAN": "#EE6666",
-        "cGAN": "#91CC75",
-        "DDPM": "#FAC858"
-    }
+    colors = {"VAE": "#5470C6", "GAN": "#EE6666", "cGAN": "#91CC75", "DDPM": "#FAC858"}
 
     # Plot ideal performance point
     ax.scatter(
-        1, 1, 1,
-        c='gold',
+        1,
+        1,
+        1,
+        c="gold",
         s=700,
         alpha=1,
-        edgecolors='#2C3E50',
+        edgecolors="#2C3E50",
         linewidth=4,
-        marker='*',
-        label='Ideal Performance',
+        marker="*",
+        label="Ideal Performance",
         zorder=100,
-        depthshade=False
+        depthshade=False,
     )
-    ax.text(1, 1, 1.10, '★ 1.0', fontsize=17, weight='bold', ha='center', color='#2C3E50',
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor='gold', alpha=0.9, linewidth=2))
+    ax.text(
+        1,
+        1,
+        1.10,
+        "★ 1.0",
+        fontsize=17,
+        weight="bold",
+        ha="center",
+        color="#2C3E50",
+        bbox=dict(
+            boxstyle="round,pad=0.5",
+            facecolor="white",
+            edgecolor="gold",
+            alpha=0.9,
+            linewidth=2,
+        ),
+    )
 
     # Plot each model
     for model_name, metrics in performance_data.items():
@@ -1767,47 +1820,79 @@ def create_static_3d_spherical_zone(
             z = metrics_list[2]  # Controllability
 
             # Calculate metrics for annotation
-            distance_to_ideal = np.sqrt((x - 1)**2 + (y - 1)**2 + (z - 1)**2)
+            distance_to_ideal = np.sqrt((x - 1) ** 2 + (y - 1) ** 2 + (z - 1) ** 2)
             avg_score = (x + y + z) / 3
 
             # Plot model position
             ax.scatter(
-                x, y, z,
+                x,
+                y,
+                z,
                 c=colors.get(model_name, "#333333"),
                 s=400,
                 alpha=0.9,
-                edgecolors='#2C3E50',
+                edgecolors="#2C3E50",
                 linewidth=3.5,
-                label=f'{model_name} (avg: {avg_score:.3f})',
+                label=f"{model_name} (avg: {avg_score:.3f})",
                 depthshade=False,
-                zorder=50
+                zorder=50,
             )
 
             # Add model label
             ax.text(
-                x, y, z + 0.08,
-                f'{model_name}\n{avg_score:.3f}',
+                x,
+                y,
+                z + 0.08,
+                f"{model_name}\n{avg_score:.3f}",
                 fontsize=12,
-                weight='bold',
-                ha='center',
-                color='#2C3E50',
-                bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
-                         edgecolor=colors.get(model_name), alpha=0.9, linewidth=2.5)
+                weight="bold",
+                ha="center",
+                color="#2C3E50",
+                bbox=dict(
+                    boxstyle="round,pad=0.5",
+                    facecolor="white",
+                    edgecolor=colors.get(model_name),
+                    alpha=0.9,
+                    linewidth=2.5,
+                ),
             )
 
     # Axis labels with clear indication that higher = better
-    ax.set_xlabel('Image Quality (Normalized) →\n[0=worst, 1=best]', 
-                   fontsize=14, weight='bold', labelpad=20, color='#34495E')
-    ax.set_ylabel('Training Stability (Normalized) →\n[0=worst, 1=best]', 
-                   fontsize=14, weight='bold', labelpad=20, color='#34495E')
-    ax.set_zlabel('Controllability (Normalized) ↑\n[0=worst, 1=best]', 
-                   fontsize=14, weight='bold', labelpad=20, color='#34495E')
+    ax.set_xlabel(
+        "Image Quality (Normalized) →\n[0=worst, 1=best]",
+        fontsize=14,
+        weight="bold",
+        labelpad=20,
+        color="#34495E",
+    )
+    ax.set_ylabel(
+        "Training Stability (Normalized) →\n[0=worst, 1=best]",
+        fontsize=14,
+        weight="bold",
+        labelpad=20,
+        color="#34495E",
+    )
+    ax.set_zlabel(
+        "Controllability (Normalized) ↑\n[0=worst, 1=best]",
+        fontsize=14,
+        weight="bold",
+        labelpad=20,
+        color="#34495E",
+    )
 
     # Title following research conventions
-    title_text = '3D Performance Space: Quantitative Model Comparison\n' + \
-                 'Normalized Metrics [0,1] | Distance to (1,1,1) = Distance to Ideal'
-    ax.set_title(title_text, fontsize=18, weight='bold', pad=35, 
-                 color='#2C3E50', family='sans-serif')
+    title_text = (
+        "3D Performance Space: Quantitative Model Comparison\n"
+        + "Normalized Metrics [0,1] | Distance to (1,1,1) = Distance to Ideal"
+    )
+    ax.set_title(
+        title_text,
+        fontsize=18,
+        weight="bold",
+        pad=35,
+        color="#2C3E50",
+        family="sans-serif",
+    )
 
     # Set limits
     ax.set_xlim(0, 1.15)
@@ -1816,55 +1901,71 @@ def create_static_3d_spherical_zone(
 
     # Enhanced legend
     legend = ax.legend(
-        loc='upper left',
+        loc="upper left",
         fontsize=11,
         framealpha=0.95,
-        edgecolor='#34495E',
+        edgecolor="#34495E",
         fancybox=True,
         shadow=True,
         borderpad=1.3,
         labelspacing=1.3,
-        title='Models (average score)',
-        title_fontsize=12
+        title="Models (average score)",
+        title_fontsize=12,
     )
-    legend.get_frame().set_facecolor('white')
+    legend.get_frame().set_facecolor("white")
     legend.get_frame().set_linewidth(2)
 
     # Grid styling
-    ax.grid(True, alpha=0.25, linestyle='--', linewidth=1.2, color='#BDC3C7')
-    
+    ax.grid(True, alpha=0.25, linestyle="--", linewidth=1.2, color="#BDC3C7")
+
     # Pane styling
     ax.xaxis.pane.fill = True
     ax.yaxis.pane.fill = True
     ax.zaxis.pane.fill = True
-    ax.xaxis.pane.set_facecolor('#F8F9FA')
-    ax.yaxis.pane.set_facecolor('#F8F9FA')
-    ax.zaxis.pane.set_facecolor('#F8F9FA')
+    ax.xaxis.pane.set_facecolor("#F8F9FA")
+    ax.yaxis.pane.set_facecolor("#F8F9FA")
+    ax.zaxis.pane.set_facecolor("#F8F9FA")
     ax.xaxis.pane.set_alpha(0.8)
     ax.yaxis.pane.set_alpha(0.8)
     ax.zaxis.pane.set_alpha(0.8)
-    
+
     # Tick styling
-    ax.tick_params(axis='x', labelsize=10, colors='#2C3E50', pad=8)
-    ax.tick_params(axis='y', labelsize=10, colors='#2C3E50', pad=8)
-    ax.tick_params(axis='z', labelsize=10, colors='#2C3E50', pad=8)
+    ax.tick_params(axis="x", labelsize=10, colors="#2C3E50", pad=8)
+    ax.tick_params(axis="y", labelsize=10, colors="#2C3E50", pad=8)
+    ax.tick_params(axis="z", labelsize=10, colors="#2C3E50", pad=8)
 
     # Viewing angle
     ax.view_init(elev=22, azim=-58)
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
+    plt.savefig(
+        save_path, dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none"
+    )
     plt.show()
 
-    print(f'✅ Static 3D visualization saved to: {save_path}')
+    print(f"✅ Static 3D visualization saved to: {save_path}")
+
+    plt.figure(figsize=(12, 8))
+    plt.plot(vae_losses, label="VAE Loss")
+    plt.plot(gan_g_losses, label="GAN Generator Loss")
+    plt.plot(gan_d_losses, label="GAN Discriminator Loss", linestyle="--")
+    plt.plot(cgan_g_losses, label="cGAN Generator Loss")
+    plt.plot(cgan_d_losses, label="cGAN Discriminator Loss", linestyle="--")
+    plt.plot(ddpm_losses, label="DDPM Loss")
+    plt.title("Model Training Losses Over Epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 # ## Conclusion
-# 
+#
 # ### Assignment Completion Summary
-# 
+#
 # This notebook successfully implements and compares all four required generative models on the MNIST dataset, meeting all assignment specifications:
-# 
+#
 # **✅ Assignment Requirements Met:**
 # - **Data**: MNIST (28×28, grayscale) using torchvision.datasets.MNIST
 # - **Models**: VAE, GAN, cGAN, and DDPM with correct architectures
@@ -1873,17 +1974,17 @@ def create_static_3d_spherical_zone(
 # - **Label Smoothing**: Implemented for cGAN discriminator real samples
 # - **Outputs**: All required image generations and comparison figures
 # - **Analysis**: Comprehensive four-dimensional comparison
-# 
+#
 # **Key Learning Outcomes:**
 # 1. **Understanding**: Successfully demonstrated comprehension of four different generative model paradigms
 # 2. **Implementation**: All models trained successfully with assignment-compliant specifications
 # 3. **Comparison**: Thorough analysis across clarity, controllability, efficiency, and stability dimensions
 # 4. **Practical Insights**: Each model has distinct strengths for different use cases
-# 
+#
 # **Best Model Recommendations:**
 # - **For Image Quality**: DDPM (highest clarity)
 # - **For Controllability**: cGAN (digit-specific generation)
 # - **For Efficiency**: VAE (fastest training and inference)
 # - **For Stability**: VAE (most reliable convergence)
-# 
+#
 # This implementation provides a solid foundation for understanding generative models and their trade-offs in practical applications.
