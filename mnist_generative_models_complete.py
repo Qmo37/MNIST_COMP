@@ -1490,29 +1490,59 @@ print("\n" + "=" * 60)
 print("ASSIGNMENT ANALYSIS SUMMARY")
 print("=" * 60)
 
+# Sort models by each metric for comparison
+clarity_sorted = sorted(
+    models, key=lambda m: performance_data[m]["Clarity (Image Quality)"], reverse=True
+)
+controllability_sorted = sorted(
+    models, key=lambda m: performance_data[m]["Controllability"], reverse=True
+)
+efficiency_sorted = sorted(
+    models, key=lambda m: performance_data[m]["Efficiency"], reverse=True
+)
+stability_sorted = sorted(
+    models, key=lambda m: performance_data[m]["Training Stability"], reverse=True
+)
+
 print("\n1. Clarity Comparison:")
-print("   DDPM (0.95): Highest quality, most realistic images")
-print("   cGAN (0.85): Sharp, clear digit generation")
-print("   GAN (0.80): Good quality when training is stable")
-print("   VAE (0.70): Slightly blurred but consistent")
+for model in clarity_sorted:
+    score = performance_data[model]["Clarity (Image Quality)"]
+    print(
+        f"   {model} ({score:.2f}): {'Highest quality' if model == clarity_sorted[0] else 'Good quality' if score > 0.7 else 'Moderate quality'}"
+    )
 
 print("\n2. Controllability:")
-print("   cGAN (0.90): Excellent - can specify exact digits")
-print("   DDPM (0.80): Good - can implement conditional variants")
-print("   GAN (0.70): Limited - no direct control over output")
-print("   VAE (0.60): Indirect - control via latent space manipulation")
+for model in controllability_sorted:
+    score = performance_data[model]["Controllability"]
+    desc = {
+        "cGAN": "Excellent - can specify exact digits",
+        "DDPM": "Good - can implement conditional variants",
+        "VAE": "Indirect - control via latent space manipulation",
+        "GAN": "Limited - no direct control over output",
+    }
+    print(f"   {model} ({score:.2f}): {desc.get(model, 'N/A')}")
 
 print("\n3. Training/Inference Efficiency:")
-print("   VAE (0.80): Fast training and very fast inference")
-print("   cGAN (0.70): Moderate training, fast inference")
-print("   GAN (0.60): Moderate efficiency, can be unstable")
-print("   DDPM (0.40): Slow training, very slow inference")
+for model in efficiency_sorted:
+    score = performance_data[model]["Efficiency"]
+    time_desc = {
+        "VAE": "Fast training and very fast inference",
+        "cGAN": "Moderate training, fast inference",
+        "GAN": "Moderate efficiency",
+        "DDPM": "Slow training, very slow inference",
+    }
+    print(f"   {model} ({score:.2f}): {time_desc.get(model, 'N/A')}")
 
 print("\n4. Stability:")
-print("   VAE (0.90): Very stable, reliable convergence")
-print("   DDPM (0.80): Stable training, no mode collapse")
-print("   cGAN (0.60): More stable than GAN due to conditioning")
-print("   GAN (0.50): Prone to mode collapse and training instability")
+for model in stability_sorted:
+    score = performance_data[model]["Training Stability"]
+    stab_desc = {
+        "DDPM": "Stable training, no mode collapse",
+        "VAE": "Very stable, reliable convergence",
+        "cGAN": "More stable than GAN due to conditioning",
+        "GAN": "Can be prone to instability",
+    }
+    print(f"   {model} ({score:.2f}): {stab_desc.get(model, 'N/A')}")
 
 print("\n" + "=" * 60)
 print("KEY FINDINGS:")
