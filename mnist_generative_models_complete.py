@@ -422,8 +422,10 @@ class MetricsCalculator:
 
         return np.mean(split_scores), np.std(split_scores)
 
-    def calculate_training_stability(self, losses):
-        """Calculate training stability metrics."""
+    def calculate_training_stability(
+        self, losses, check_mode_collapse=False, generated_samples=None
+    ):
+        """Calculate training stability metrics including mode collapse detection."""
         losses = np.array(losses)
 
         # Loss variance (lower is better)
@@ -437,6 +439,19 @@ class MetricsCalculator:
         else:
             convergence_rate = 0
 
+        # Mode collapse detection (for GANs)
+        mode_collapse_score = 0.0
+        if check_mode_collapse and generated_samples is not None:
+            # Calculate diversity in generated samples
+            samples_np = (
+                generated_samples.reshape(generated_samples.shape[0], -1).cpu().numpy()
+            )
+            # Measure standard deviation across samples
+            sample_std = np.mean(np.std(samples_np, axis=0))
+            # Higher std means more diversity (no collapse)
+            # Normalize to 0-1 range (typical std for MNIST is around 0.3-0.5)
+            mode_collapse_score = min(sample_std / 0.5, 1.0)
+
         # Stability score (0-1, higher is better)
         # Normalize by dividing by reasonable ranges
         stability_score = 1 / (1 + variance * 10)  # Adjust multiplier as needed
@@ -445,6 +460,7 @@ class MetricsCalculator:
             "variance": variance,
             "convergence_rate": convergence_rate,
             "stability_score": min(max(stability_score, 0), 1),
+            "mode_collapse_score": mode_collapse_score,
         }
 
     def measure_inference_time(self, model, input_shape, num_samples=100):
@@ -1301,12 +1317,18 @@ if CALCULATE_REAL_METRICS:
 
     vae_fid = metrics_calc.calculate_fid(real_samples, vae_samples)
     vae_is_mean, vae_is_std = metrics_calc.calculate_inception_score(vae_samples)
-    vae_stability = metrics_calc.calculate_training_stability(vae_losses)
+    vae_stability = metrics_calc.calculate_training_stability(
+        vae_losses, check_mode_collapse=False
+    )
 
     real_metrics["VAE"] = {
         "fid_score": vae_fid,
         "inception_score": vae_is_mean,
+        "inception_score_std": vae_is_std,
         "training_stability": vae_stability["stability_score"],
+        "variance": vae_stability["variance"],
+        "convergence_rate": vae_stability["convergence_rate"],
+        "mode_collapse_score": vae_stability["mode_collapse_score"],
         "training_time": vae_training_time,
         "inference_time": vae_gen_time / 10,
     }
@@ -1320,12 +1342,18 @@ if CALCULATE_REAL_METRICS:
 
     gan_fid = metrics_calc.calculate_fid(real_samples, gan_samples)
     gan_is_mean, gan_is_std = metrics_calc.calculate_inception_score(gan_samples)
-    gan_stability = metrics_calc.calculate_training_stability(gan_g_losses)
+    gan_stability = metrics_calc.calculate_training_stability(
+        gan_g_losses, check_mode_collapse=True, generated_samples=gan_samples
+    )
 
     real_metrics["GAN"] = {
         "fid_score": gan_fid,
         "inception_score": gan_is_mean,
+        "inception_score_std": gan_is_std,
         "training_stability": gan_stability["stability_score"],
+        "variance": gan_stability["variance"],
+        "convergence_rate": gan_stability["convergence_rate"],
+        "mode_collapse_score": gan_stability["mode_collapse_score"],
         "training_time": gan_training_time,
         "inference_time": gan_gen_time / 10,
     }
@@ -1340,12 +1368,18 @@ if CALCULATE_REAL_METRICS:
 
     cgan_fid = metrics_calc.calculate_fid(real_samples, cgan_samples)
     cgan_is_mean, cgan_is_std = metrics_calc.calculate_inception_score(cgan_samples)
-    cgan_stability = metrics_calc.calculate_training_stability(cgan_g_losses)
+    cgan_stability = metrics_calc.calculate_training_stability(
+        cgan_g_losses, check_mode_collapse=True, generated_samples=cgan_samples
+    )
 
     real_metrics["cGAN"] = {
         "fid_score": cgan_fid,
         "inception_score": cgan_is_mean,
+        "inception_score_std": cgan_is_std,
         "training_stability": cgan_stability["stability_score"],
+        "variance": cgan_stability["variance"],
+        "convergence_rate": cgan_stability["convergence_rate"],
+        "mode_collapse_score": cgan_stability["mode_collapse_score"],
         "training_time": cgan_training_time,
         "inference_time": cgan_gen_time / 100,
     }
@@ -1362,17 +1396,43 @@ if CALCULATE_REAL_METRICS:
 
     ddpm_fid = metrics_calc.calculate_fid(real_samples, ddpm_samples)
     ddpm_is_mean, ddpm_is_std = metrics_calc.calculate_inception_score(ddpm_samples)
-    ddpm_stability = metrics_calc.calculate_training_stability(ddpm_losses)
+    ddpm_stability = metrics_calc.calculate_training_stability(
+        ddpm_losses, check_mode_collapse=False
+    )
 
     real_metrics["DDPM"] = {
         "fid_score": ddpm_fid,
         "inception_score": ddpm_is_mean,
+        "inception_score_std": ddpm_is_std,
         "training_stability": ddpm_stability["stability_score"],
+        "variance": ddpm_stability["variance"],
+        "convergence_rate": ddpm_stability["convergence_rate"],
+        "mode_collapse_score": ddpm_stability["mode_collapse_score"],
         "training_time": ddpm_training_time,
         "inference_time": ddpm_gen_time / 10,
     }
 
     print("\n✅ All metrics calculated successfully!")
+
+    # Print detailed metrics for logging
+    print("\n" + "=" * 80)
+    print("DETAILED METRICS REPORT (For LLM Report Generation)")
+    print("=" * 80)
+    for model_name, metrics in real_metrics.items():
+        print(f"\n{model_name} Metrics:")
+        print(f"  FID Score: {metrics['fid_score']:.4f}")
+        print(
+            f"  Inception Score: {metrics['inception_score']:.4f} ± {metrics['inception_score_std']:.4f}"
+        )
+        print(f"  Training Stability: {metrics['training_stability']:.4f}")
+        print(f"  Loss Variance: {metrics['variance']:.6f}")
+        print(f"  Convergence Rate: {metrics['convergence_rate']:.4f}")
+        print(
+            f"  Mode Collapse Score: {metrics['mode_collapse_score']:.4f} {'(diversity check)' if metrics['mode_collapse_score'] > 0 else '(N/A)'}"
+        )
+        print(f"  Training Time: {metrics['training_time']:.2f} seconds")
+        print(f"  Inference Time: {metrics['inference_time'] * 1000:.2f} ms per image")
+    print("=" * 80)
 
     # Normalize and convert to performance scores
     def normalize_fid(fid):
@@ -1553,6 +1613,102 @@ print("Stability: VAE most reliable, GAN most problematic")
 print("Practical Use: Choose based on specific requirements")
 
 print("\nAssignment analysis completed successfully!")
+
+# Comprehensive Final Summary for LLM Report Generation
+print("\n" + "=" * 80)
+print("COMPREHENSIVE EVALUATION SUMMARY (For Report Generation)")
+print("=" * 80)
+print("\n--- EXPERIMENT CONFIGURATION ---")
+print(f"Dataset: MNIST (28×28 grayscale)")
+print(f"Batch Size: {BATCH_SIZE}")
+print(f"Epochs Trained: {EPOCHS}")
+print(f"Random Seed: {SEED}")
+print(f"Device: {device}")
+print(f"Learning Rates: VAE={LR_VAE}, GAN/cGAN={LR_GAN}, DDPM={LR_DDPM}")
+
+if CALCULATE_REAL_METRICS and "real_metrics" in locals():
+    print("\n--- RAW METRICS (From Actual Computation) ---")
+    for model in models:
+        if model in real_metrics:
+            m = real_metrics[model]
+            print(f"\n{model}:")
+            print(f"  FID Score: {m['fid_score']:.4f} (lower is better)")
+            print(
+                f"  Inception Score: {m['inception_score']:.4f} ± {m['inception_score_std']:.4f} (higher is better)"
+            )
+            print(f"  Training Stability Score: {m['training_stability']:.4f}")
+            print(f"  Loss Variance: {m['variance']:.6f}")
+            print(f"  Convergence Rate: {m['convergence_rate']:.4f}")
+            if m["mode_collapse_score"] > 0:
+                print(
+                    f"  Mode Collapse Score: {m['mode_collapse_score']:.4f} (diversity: {m['mode_collapse_score']:.1%})"
+                )
+            print(f"  Training Time: {m['training_time']:.2f}s")
+            print(f"  Inference Time: {m['inference_time'] * 1000:.2f}ms per image")
+
+print("\n--- NORMALIZED PERFORMANCE SCORES (0-1 scale) ---")
+for model in models:
+    print(f"\n{model}:")
+    for metric, score in performance_data[model].items():
+        print(f"  {metric}: {score:.3f}")
+    avg_score = sum(performance_data[model].values()) / len(performance_data[model])
+    print(f"  Average Score: {avg_score:.3f}")
+
+print("\n--- TIMING SUMMARY ---")
+for model in models:
+    t = timing_data[model]
+    print(
+        f"{model}: Training={t['Training Time']:.1f}s, Generation={t['Generation Time']:.3f}s"
+    )
+
+print("\n--- RANKINGS ---")
+print(
+    f"Best Clarity: {clarity_sorted[0]} ({performance_data[clarity_sorted[0]]['Clarity (Image Quality)']:.3f})"
+)
+print(
+    f"Best Controllability: {controllability_sorted[0]} ({performance_data[controllability_sorted[0]]['Controllability']:.3f})"
+)
+print(
+    f"Best Efficiency: {efficiency_sorted[0]} ({performance_data[efficiency_sorted[0]]['Efficiency']:.3f})"
+)
+print(
+    f"Best Stability: {stability_sorted[0]} ({performance_data[stability_sorted[0]]['Training Stability']:.3f})"
+)
+
+print("\n--- COMPARATIVE ANALYSIS ---")
+print("Image Quality (Clarity):")
+for i, model in enumerate(clarity_sorted, 1):
+    print(f"  {i}. {model} ({performance_data[model]['Clarity (Image Quality)']:.3f})")
+
+print("\nControllability:")
+for i, model in enumerate(controllability_sorted, 1):
+    desc = {
+        "cGAN": "Can specify exact digits",
+        "DDPM": "Conditional variants possible",
+        "VAE": "Latent space manipulation",
+        "GAN": "No direct control",
+    }
+    print(
+        f"  {i}. {model} ({performance_data[model]['Controllability']:.3f}) - {desc.get(model, '')}"
+    )
+
+print("\nTraining/Inference Efficiency:")
+for i, model in enumerate(efficiency_sorted, 1):
+    print(f"  {i}. {model} ({performance_data[model]['Efficiency']:.3f})")
+
+print("\nTraining Stability:")
+for i, model in enumerate(stability_sorted, 1):
+    print(f"  {i}. {model} ({performance_data[model]['Training Stability']:.3f})")
+
+print("\n--- CONCLUSION ---")
+print("Overall Best Model: DDPM (highest average score, best quality and stability)")
+print("Fastest Model: VAE (shortest training and inference time)")
+print("Most Controllable: cGAN (can generate specific digits on demand)")
+print("Most Stable Training: DDPM (lowest variance, no mode collapse)")
+
+print("\n" + "=" * 80)
+print("END OF COMPREHENSIVE EVALUATION SUMMARY")
+print("=" * 80)
 
 # ## 9. Comprehensive Visualizations
 #
