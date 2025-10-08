@@ -147,20 +147,3 @@ An interactive 3D visualization plotting models in a three-dimensional performan
 The plot includes color-coded performance zones (Elite, Excellent, Good) with filled cuboid regions, showing which models achieve high performance across multiple dimensions simultaneously. The golden star represents the theoretical ideal model (1.0 in all metrics).
 
 </details>
-
-## ✅ Assignment Compliance Checklist
-
-- [x] Four models implemented (VAE, GAN, cGAN, DDPM)
-- [x] MNIST dataset (28×28 grayscale)
-- [x] Batch size: 128
-- [x] Fixed seed: 42
-- [x] Correct learning rates (1e-3 VAE, 2e-4 GAN/cGAN)
-- [x] Label smoothing for cGAN (0.9)
-- [x] All required loss functions implemented
-- [x] All required outputs generated and consolidated in the main notebook
-- [x] Four-dimensional analysis performed with real metrics
-- [x] Comprehensive visualizations generated
-
----
-**Author**: Qmo37  
-**Last Updated**: October 2024
