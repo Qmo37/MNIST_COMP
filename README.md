@@ -82,6 +82,9 @@ The following results were generated from a complete run of the notebook, calcul
 The notebook generates comprehensive visualizations comparing all four models across multiple dimensions:
 
 ### Training Curves
+<details open>
+<summary>Click to expand/collapse</summary>
+
 ![Training Curves](outputs/visualizations/Training%20Curve.png)
 
 Shows the loss progression over 40 epochs for each model:
@@ -90,7 +93,12 @@ Shows the loss progression over 40 epochs for each model:
 - **cGAN**: Conditional GAN dynamics with class-aware training
 - **DDPM**: Gradual diffusion loss reduction over epochs
 
+</details>
+
 ### Performance Metrics Bar Charts
+<details open>
+<summary>Click to expand/collapse</summary>
+
 ![Bar Charts](outputs/visualizations/Bar%20Charts.png)
 
 Side-by-side comparison of the four key performance metrics:
@@ -99,12 +107,22 @@ Side-by-side comparison of the four key performance metrics:
 - **Controllability**: Ability to generate specific outputs
 - **Efficiency**: Training and inference speed
 
+</details>
+
 ### Performance Heatmap
+<details open>
+<summary>Click to expand/collapse</summary>
+
 ![Heatmap](outputs/visualizations/Heatmap.png)
 
 A comprehensive heatmap displaying all metrics across all models in a single view. Warmer colors indicate better performance, making it easy to identify each model's strengths and weaknesses at a glance.
 
+</details>
+
 ### Radar Chart
+<details open>
+<summary>Click to expand/collapse</summary>
+
 ![Radar Chart](outputs/visualizations/Radar%20chart.png)
 
 Multi-dimensional radar chart providing an intuitive visualization of how each model balances different performance aspects. The area covered by each model indicates its overall versatility:
@@ -113,7 +131,12 @@ Multi-dimensional radar chart providing an intuitive visualization of how each m
 - **VAE**: Best efficiency but lower quality
 - **GAN**: Moderate across all metrics
 
+</details>
+
 ### 3D Performance Space
+<details open>
+<summary>Click to expand/collapse</summary>
+
 ![3D Performance Plot](outputs/visualizations/3D%20Performance%20Plot%20(Filled%20Cuboids).png)
 
 An interactive 3D visualization plotting models in a three-dimensional performance space:
@@ -122,6 +145,8 @@ An interactive 3D visualization plotting models in a three-dimensional performan
 - **Z-axis**: Controllability
 
 The plot includes color-coded performance zones (Elite, Excellent, Good) with filled cuboid regions, showing which models achieve high performance across multiple dimensions simultaneously. The golden star represents the theoretical ideal model (1.0 in all metrics).
+
+</details>
 
 ## ✅ Assignment Compliance Checklist
 
