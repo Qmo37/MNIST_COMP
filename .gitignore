@@ -33,15 +33,19 @@ outputs/checkpoints/
 *.ckpt
 *.weights
 
-# Generated images
+# Generated images (intermediate results)
 outputs/images/
-outputs/visualizations/
 
 # Logs
 logs/
 *.log
 tensorboard_logs/
 wandb/
+
+# Keep final visualizations for README display
+!outputs/visualizations/
+!outputs/visualizations/*.png
+!outputs/visualizations/*.jpg
 
 # ============================================================================
 # Temporary Development Scripts (NOT part of assignment)
