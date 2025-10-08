@@ -1,107 +1,135 @@
-# MNIST Generative Models - School Assignment .gitignore
-# Only essential files are tracked for assignment submission
+# ============================================================================
+# MNIST Generative Models - Assignment Repository .gitignore
+# ============================================================================
+# This repository contains assignment submission materials only.
+# All temporary scripts, generated outputs, and development files are ignored.
 
 # ============================================================================
-# Python
-# ============================================================================
-
-# ============================================================================
-# Python
+# Python Cache & Bytecode
 # ============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.ipynb_checkpoints
+.Python
+*.pyc
+.ipynb_checkpoints/
 
 # ============================================================================
-# Data & Models (Auto-downloaded/Generated)
+# Data & Datasets (Auto-downloaded)
 # ============================================================================
-# MNIST Dataset (will be auto-downloaded)
-data/MNIST/raw/*.gz
-data/MNIST/processed/*.pt
-MNIST dataset (will be auto-downloaded when notebook runs)
-# Model checkpoints (generated during training)
+# MNIST dataset - will be auto-downloaded when notebooks run
+data/
+data/MNIST/
+*.gz
+*.pt
+
+# ============================================================================
+# Model Outputs (Generated during training)
+# ============================================================================
+# Model checkpoints
 outputs/checkpoints/
 *.pth
-*.pt
 *.ckpt
 *.weights
-# ============================================================================
-# GeneratedGenerated OutputsOutputs (Keep structure, ignore large files)(Can be reproduced by running the notebook)
-# ============================================================================
-# Generated images (can be regenerated)
-outputs/images/**/*.png
-outputs/images/**/*.jpg
-outputs/images/**/*.jpeg
 
-# Large visualization files
-outputs/visualizations/*.html
-outputs/visualizations/*.png
-outputs/visualizations/*.pdf
+# Generated images
+outputs/images/
+outputs/visualizations/
 
-# Keep directory structure but ignore contents
-outputs/images/vae/*
-outputs/images/gan/*
-outputs/images/cgan/*
-outputs/images/ddpm/*
-outputs/images/comparison/*
-
-# ============================================================================
-# Backup and Temporary Files
-# ============================================================================
-
-# Notebook backups
-backups/*.ipynb.fixed
-backups/*.ipynb.original
-*.ipynb.bak
-*.ipynb.backup
-*.ipynb~
-All (regenerated each run)/images/
-outputs/visualizations
-# Training logs
+# Logs
 logs/
+*.log
 tensorboard_logs/
 wandb/
 
 # ============================================================================
-# Development & Utilities (Not needed for assignment submission)
+# Temporary Development Scripts (NOT part of assignment)
 # ============================================================================
-# Utility scripts (not part of main assignment)
-src/
-scripts/
+# All fix/update scripts used during development
+fix_*.py
+update_*.py
+apply_*.py
+add_*.py
+test_*.py
+quick_*.py
+simple_*.py
+extract_*.py
+run_*.py
+*_fix.py
 
-# Backup files
-backups/
-*.ipynb.bak
-*.ipynb.backup
-*~
+# Development utilities
+TEST_MODE.py
+QUICK_TEST_CELL.py
+IMMEDIATE_FIX.py
+visualizations.py
+mnist_generative_models.py
+mnist_generative_models_complete.py
 
-# Temporary documentation files
-CLEANUP_PLAN.md
-CLEANUP_SUMMARY.txt
-FOLDER_STRUCTURE.md
+# ============================================================================
+# Temporary Documentation & Summaries
+# ============================================================================
+# Summary files created during development
+*_SUMMARY.md
+COMPLETE_SUMMARY.md
+EFFICIENCY_FIX_SUMMARY.md
+VISUALIZATION_CLEANUP_SUMMARY.md
+CLEANUP_*.md
 .gitignore_SUMMARY.md
 
 # ============================================================================
-# IDE & OS
+# Generated Visualizations (root directory)
+# ============================================================================
+# PNG files should be in outputs/visualizations/, not root
+*.png
+!assignment_*.png
+!figure_*.png
+
+# ============================================================================
+# Backup Files
+# ============================================================================
+backups/
+*.bak
+*.backup
+*~
+*.orig
+*.ipynb.bak
+*.ipynb.backup
+*.ipynb~
+
+# ============================================================================
+# IDE & Editor Files
 # ============================================================================
 .vscode/
 .idea/
 *.swp
+*.swo
+.DS_Store
+Thumbs.db
 Desktop.ini
-# Environment
+
+# ============================================================================
+# Environment & Credentials
 # ============================================================================
 .env
 .venv
 venv/
-*.log
-KEEPTHESEFILESFOR ASSIGNMENT SUBMISSION# Core assignment files
-!MNIST_Generative_Models_Complete.ipynb
-!mnist_generative_models.py
-!README.md
-!assignment_requirements.txt
-!.gitignore
+env/
+ENV/
 
-# Assignment document
+# ============================================================================
+# KEEP THESE FILES FOR ASSIGNMENT SUBMISSION
+# ============================================================================
+# Core assignment notebooks
+!MNIST_Generative_Models_Complete.ipynb
+!MNIST_Generative_Models_VAE.ipynb
+
+# Documentation
+!README.md
+!VAE_NOTEBOOK_README.md
+
+# Assignment materials
 !HW2*.pdf
+
+# This file
+!.gitignore
