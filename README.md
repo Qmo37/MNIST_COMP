@@ -60,15 +60,68 @@ The following results were generated from a complete run of the notebook, calcul
 
 ```
 ================================================================================
-                          ASSIGNMENT COMPARISON TABLE
+                    PERFORMANCE AND TIMING SUMMARY TABLE
 ================================================================================
- Model   Clarity (Image Quality)   Training Stability   Controllability   Efficiency  Training Time (s)  Generation Time (s)  Average Score
-------  -------------------------  --------------------  -----------------  ------------  -------------------  -------------------  ---------------
-   VAE                      0.892                 0.000                0.6           0.7                562.2                0.020          0.548
-   GAN                      0.753                 0.223                0.3           0.7                621.5                0.001          0.494
-  cGAN                      0.781                 0.162                0.9           0.7                626.0                0.078          0.636
-  DDPM                      0.757                 0.987                0.8           0.7               1371.4                3.269          0.811
+ Model  Clarity (Image Quality)  Training Stability  Controllability  Efficiency  Training Time (s)  Inference Time (ms/img)
+------  -------------------------  --------------------  -----------------  ------------  -------------------  -------------------------
+   VAE                      0.799                 0.000              0.632         0.997               530.6                        2.8
+   GAN                      0.600                 0.201              0.300         0.956               777.2                        0.1
+  cGAN                      0.716                 0.167              0.900         0.959               771.5                        0.1
+  DDPM                      0.727                 0.974              0.800         0.000              1710.3                      329.6
+================================================================================
 ```
+
+**Key Observations:**
+- **VAE**: Best efficiency (fastest training + inference), but lowest training stability score
+- **GAN**: Fast inference (0.1 ms/img), moderate image quality
+- **cGAN**: Best controllability (0.900), sharp images, fast inference
+- **DDPM**: Best training stability (0.974) and quality, but extremely slow (329.6 ms/img)
+
+## 📊 Visualizations
+
+The notebook generates comprehensive visualizations comparing all four models across multiple dimensions:
+
+### Training Curves
+![Training Curves](outputs/visualizations/Training%20Curve.png)
+
+Shows the loss progression over 40 epochs for each model:
+- **VAE**: Steady convergence of reconstruction + KLD loss
+- **GAN**: Generator and Discriminator losses in adversarial competition
+- **cGAN**: Conditional GAN dynamics with class-aware training
+- **DDPM**: Gradual diffusion loss reduction over epochs
+
+### Performance Metrics Bar Charts
+![Bar Charts](outputs/visualizations/Bar%20Charts.png)
+
+Side-by-side comparison of the four key performance metrics:
+- **Clarity (Image Quality)**: Measured by FID and Inception Score
+- **Training Stability**: Based on loss variance and convergence
+- **Controllability**: Ability to generate specific outputs
+- **Efficiency**: Training and inference speed
+
+### Performance Heatmap
+![Heatmap](outputs/visualizations/Heatmap.png)
+
+A comprehensive heatmap displaying all metrics across all models in a single view. Warmer colors indicate better performance, making it easy to identify each model's strengths and weaknesses at a glance.
+
+### Radar Chart
+![Radar Chart](outputs/visualizations/Radar%20chart.png)
+
+Multi-dimensional radar chart providing an intuitive visualization of how each model balances different performance aspects. The area covered by each model indicates its overall versatility:
+- **DDPM**: Largest coverage (best balance)
+- **cGAN**: Strong in quality and controllability
+- **VAE**: Best efficiency but lower quality
+- **GAN**: Moderate across all metrics
+
+### 3D Performance Space
+![3D Performance Plot](outputs/visualizations/3D%20Performance%20Plot%20(Filled%20Cuboids).png)
+
+An interactive 3D visualization plotting models in a three-dimensional performance space:
+- **X-axis**: Image Quality (Clarity)
+- **Y-axis**: Training Stability
+- **Z-axis**: Controllability
+
+The plot includes color-coded performance zones (Elite, Excellent, Good) with filled cuboid regions, showing which models achieve high performance across multiple dimensions simultaneously. The golden star represents the theoretical ideal model (1.0 in all metrics).
 
 ## ✅ Assignment Compliance Checklist
 
