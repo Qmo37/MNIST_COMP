@@ -1,7 +1,13 @@
 # MNIST Generative Models Comparison
 
-[![Open Full Training in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb)
-[![Open Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/Evaluation_and_Visualization_Complete_FIXED.ipynb)
+**🚀 Run in Google Colab (No setup required!):**
+
+| Notebook | Description | Runtime | Launch |
+|----------|-------------|---------|--------|
+| **Full Training** | Train all 4 models from scratch, save checkpoints, generate visualizations | ~2-3 hours | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/MNIST_Generative_Models_Complete.ipynb) |
+| **Evaluation Only** | Load pre-trained checkpoints, evaluate metrics, create visualizations | ~5-10 min | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Qmo37/MNIST_COMP/blob/main/Evaluation_and_Visualization_Complete_FIXED.ipynb) |
+
+> **💡 Tip**: Use **"Evaluation Only"** notebook for quick testing with existing checkpoints!
 
 ---
 

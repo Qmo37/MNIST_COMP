@@ -27,13 +27,13 @@ data/MNIST/
 # ============================================================================
 # Model Outputs (Generated during training)
 # ============================================================================
-# Model checkpoints
+# Model checkpoints (too large for repo, ~57MB total)
 outputs/checkpoints/
 *.pth
 *.ckpt
 *.weights
 
-# Generated images (intermediate results)
+# Generated images (intermediate training outputs)
 outputs/images/
 
 # Logs
@@ -42,10 +42,15 @@ logs/
 tensorboard_logs/
 wandb/
 
-# Keep final visualizations for README display
+# ============================================================================
+# KEEP VISUALIZATIONS - Critical for README display
+# ============================================================================
+# These images are shown in README and needed for GitHub display
+!outputs/
 !outputs/visualizations/
 !outputs/visualizations/*.png
 !outputs/visualizations/*.jpg
+!outputs/visualizations/*.html
 
 # ============================================================================
 # Temporary Development Scripts (NOT part of assignment)
@@ -84,10 +89,12 @@ CLEANUP_*.md
 # ============================================================================
 # Generated Visualizations (root directory)
 # ============================================================================
-# PNG files should be in outputs/visualizations/, not root
-*.png
+# Ignore PNG files in root directory only (not in subdirectories)
+/*.png
+# But keep any assignment-related images
 !assignment_*.png
 !figure_*.png
+!All_models_generate_images.png
 
 # ============================================================================
 # Backup Files
