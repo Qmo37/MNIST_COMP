@@ -1,0 +1,76 @@
+================================================================================
+COMPLETE METRICS SUMMARY - ACTUAL CALCULATED VALUES
+================================================================================
+
+VAE Metrics:
+  FID Score: 40.4899
+  Inception Score: 2.4063 ± 0.1286
+  Training Stability: 0.8889
+  Loss Variance: 2723112.869738
+  Convergence Rate: 0.1605
+  Mode Collapse Score: 0.0000
+  Controllability: 0.1556
+  Training Time: 562.82 seconds
+  Inference Time: 2.05 ms per image
+
+GAN Metrics:
+  FID Score: 77.7075
+  Inception Score: 3.0813 ± 0.2006
+  Training Stability: 0.7171
+  Loss Variance: 0.349398
+  Convergence Rate: 0.5307
+  Mode Collapse Score: 0.7647
+  Controllability: 0.0645
+  Training Time: 610.67 seconds
+  Inference Time: 0.08 ms per image
+
+cGAN Metrics:
+  FID Score: 72.0188
+  Inception Score: 2.8242 ± 0.1529
+  Training Stability: 0.6841
+  Loss Variance: 0.516450
+  Convergence Rate: 0.6175
+  Mode Collapse Score: 0.7575
+  Controllability: 0.9590
+  Training Time: 632.84 seconds
+  Inference Time: 0.80 ms per image
+
+DDPM Metrics:
+  FID Score: 61.3091
+  Inception Score: 2.1157 ± 0.1111
+  Training Stability: 0.5021
+  Loss Variance: 0.001297
+  Convergence Rate: 0.5492
+  Mode Collapse Score: 0.0000
+  Controllability: 0.1268
+  Training Time: 1393.36 seconds
+  Inference Time: 337.83 ms per image
+
+================================================================================
+CONTROLLABILITY DETAILS
+================================================================================
+
+VAE:
+  Type: Unconditional (entropy-based)
+  Class distribution: [94, 114, 129, 116, 99, 91, 73, 84, 91, 109]
+  Entropy: 2.2898 / 2.3026
+  Controllability: 0.1556
+
+GAN:
+  Type: Unconditional (entropy-based)
+  Class distribution: [111, 154, 67, 82, 109, 65, 106, 125, 81, 100]
+  Entropy: 2.2692 / 2.3026
+  Controllability: 0.0645
+
+cGAN:
+  Type: Conditional (classification accuracy)
+  Correctly classified: 959/1000
+  Accuracy: 0.9590
+
+DDPM:
+  Type: Unconditional (entropy-based)
+  Class distribution: [74, 25, 164, 50, 216, 103, 56, 163, 107, 42]
+  Entropy: 2.1257 / 2.3026
+  Controllability: 0.1268
+
+================================================================================
