@@ -45,12 +45,17 @@ wandb/
 # ============================================================================
 # KEEP VISUALIZATIONS - Critical for README display
 # ============================================================================
-# These images are shown in README and needed for GitHub display
+# Ignore original/intermediate visualizations
+outputs/visualizations/
+
+# Keep only final visualizations for README display
 !outputs/
-!outputs/visualizations/
-!outputs/visualizations/*.png
-!outputs/visualizations/*.jpg
-!outputs/visualizations/*.html
+!outputs/visualizations_final/
+!outputs/visualizations_final/*.png
+!outputs/visualizations_final/*.jpg
+!outputs/visualizations_final/*.html
+!outputs/visualizations_final/*.txt
+!outputs/visualizations_final/*.md
 
 # ============================================================================
 # Temporary Development Scripts (NOT part of assignment)
